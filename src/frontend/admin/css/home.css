@@ -1,0 +1,366 @@
+﻿.home-page {
+  width: 100%;
+  padding: 20px 20px;
+  background: #edf2ff;
+  font-family: 'Poppins', sans-serif;
+  color: #0f172a;
+}
+
+.home-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.home-subtitle {
+  margin: 0 0 8px;
+  font-size: 16px;
+  color: #475569;
+}
+
+.home-header h1 {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.1;
+  color: black;
+}
+
+.home-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #64748b;
+  text-align: right;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  border-radius: 20px;
+  padding: 24px;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  right: -20px;
+  top: -20px;
+  width: 120px;
+  height: 120px;
+  opacity: 0.14;
+  border-radius: 50%;
+}
+
+.stat-card__label {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #334155;
+}
+
+.stat-card__value {
+  font-size: 42px;
+  font-weight: 800;
+  margin: 12px 0;
+}
+
+.stat-card__icon {
+  font-size: 28px;
+}
+
+.stat-card--danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.stat-card--danger::before {
+  background: #f87171;
+}
+
+.stat-card--alert {
+  background: #fde68a;
+  color: #92400e;
+}
+
+.stat-card--alert::before {
+  background: #f59e0b;
+}
+
+.stat-card--info {
+  background: #bfdbfe;
+  color: #1e3a8a;
+}
+
+.stat-card--info::before {
+  background: #3b82f6;
+}
+
+.stat-card--success {
+  background: #bbf7d0;
+  color: #166534;
+}
+
+.stat-card--success::before {
+  background: #22c55e;
+}
+
+.panels-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  align-items: stretch;
+  grid-auto-rows: 200px;
+}
+
+.panel {
+  background: white;
+  border-radius: 20px;
+  padding: 12px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+  max-height: 200px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.panel-header h2 {
+  margin: 0;
+  font-size: 24px;
+  color: black;
+}
+
+.panel-header a {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.alert-list {
+  display: grid;
+  gap: 8px;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+/* ensure panel inner sections share available height and stay balanced */
+.panel > .alert-list,
+.panel > .hotline-list {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 6px;
+  max-height: calc(100% - 44px);
+}
+
+.panel > .quick-actions {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 10px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* make quick action buttons equal size and fill the quick-action panel */
+.panel--quick-action {
+  display: flex;
+  flex-direction: column;
+}
+
+.panel--quick-action > .quick-actions {
+  flex: 1 1 auto;
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+}
+
+.panel--quick-action .action-card {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: auto;
+}
+
+/* ensure button element spans its flex area */
+.panel--quick-action .action-card[type="button"],
+.panel--quick-action button.action-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 12px;
+}
+
+/* make inner lists scroll internally if content overflows while keeping page height fixed */
+.panel > .alert-list::-webkit-scrollbar,
+.panel > .hotline-list::-webkit-scrollbar {
+  width: 6px;
+}
+.panel > .alert-list::-webkit-scrollbar-thumb,
+.panel > .hotline-list::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.08);
+  border-radius: 4px;
+}
+
+.alert-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #eceff2;
+}
+
+.alert-item--high {
+  border: 1px solid #fca5a5;
+}
+
+.alert-item--medium {
+  border: 1px solid #facc15;
+}
+
+.alert-item__title {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.alert-item__subtitle {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.alert-item__meta {
+  text-align: right;
+  display: grid;
+  gap: 2px;
+  font-size: 11px;
+  color: #475569;
+}
+
+.quick-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  min-height: 100px;
+  border-radius: 22px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #fffbeb;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+}
+
+.action-card span {
+  font-size: 20px;
+}
+
+.action-card strong {
+  font-size: 13px;
+}
+
+.action-card--alert {
+  background: #fef3c7;
+}
+
+.action-card--center {
+  background: #dcfce7;
+}
+
+.action-card--evacuees {
+  background: #dbeafe;
+}
+
+.action-card--report {
+  background: #fef9c3;
+}
+
+.hotline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.hotline-item {
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: #ecfccb;
+  color: #166534;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+@media (max-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .panels-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .home-page {
+    padding: 24px 18px;
+  }
+
+  .home-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .home-meta {
+    text-align: left;
+  }
+}
