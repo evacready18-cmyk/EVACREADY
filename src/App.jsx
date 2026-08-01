@@ -1,34 +1,22 @@
 import './App.css'
 import { useState } from 'react'
 import Sidebar from './frontend/admin/js/sidebar.js'
+import LoginHomepage from './frontend/login.jsx'
 import Home from './frontend/admin/js/home.js'
 import AlertPage from './frontend/admin/js/alert.js'
-import EvacManagePage from './frontend/admin/js/evacmanage.js'
-import EvacuationCenterPage from './frontend/admin/js/evacuationcenter.js'
-import ReportPage from './frontend/admin/js/report.js'
-import SettingsPage from './frontend/admin/js/settings.js'
-import UserManagementPage from './frontend/admin/js/usermanagement.js'
 
 function App() {
-  const [page, setPage] = useState('dashboard')
+  const [page, setPage] = useState('login')
 
   const renderPage = () => {
-    switch (page) {
-      case 'alert':
-        return <AlertPage />
-      case 'evacmanage':
-        return <EvacManagePage />
-      case 'evacuationcenter':
-        return <EvacuationCenterPage />
-      case 'report':
-        return <ReportPage />
-      case 'settings':
-        return <SettingsPage />
-      case 'usermanagement':
-        return <UserManagementPage />
-      default:
-        return <Home navigate={setPage} />
-    }
+    if (page === 'login') return <LoginHomepage onContinue={() => setPage('home')} />
+    if (page === 'home' || page === 'dashboard') return <Home />
+    if (page === 'alert') return <AlertPage />
+    return <div>Page not found</div>
+  }
+
+  if (page === 'login') {
+    return renderPage()
   }
 
   return (
