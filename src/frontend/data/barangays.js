@@ -1,0 +1,35 @@
+// List of Poblacion barangays to use in forms and evacuee profiles
+export const BARANGAYS = [
+  "Barangay 1",
+  "Barangay 2",
+  "Barangay 3",
+  "Barangay 4",
+  "Barangay 5",
+  "Barangay 6",
+  "Barangay 7",
+  "Barangay 8",
+  "Barangay 9",
+  "Amin",
+  "Banogbanog",
+  "Bulad",
+  "Bungahin",
+  "Cabcab",
+  "Camangcamang",
+  "Camp Clark",
+  "Cansalongon",
+  "Guintubhan",
+  "Libas",
+  "Limalima",
+  "Makilignit",
+  "Mansablay",
+  "Maytubig",
+  "Panaquiao",
+  "Riverside",
+  "Rumirang",
+  "San Agustin",
+  "Sebucawan",
+  "Sikatuna",
+  "Tinongan"
+];
+
+export default BARANGAYS;

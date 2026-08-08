@@ -13,8 +13,26 @@ const homeLinks = [
 
 const section = React.createElement
 
-const Home = ({ navigate }) =>
-  section(
+function Home({ navigate }) {
+  const [now, setNow] = React.useState(new Date())
+
+  React.useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const formattedDate = now.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  })
+  const formattedTime = now.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })
+
+  return section(
     'div',
     { className: 'home-page' },
     section(
@@ -29,8 +47,8 @@ const Home = ({ navigate }) =>
       section(
         'div',
         { className: 'home-meta' },
-        section('span', null, 'May 24, 2026'),
-        section('span', null, '9:45 AM'),
+        section('span', null, formattedDate),
+        section('span', null, formattedTime),
       ),
     ),
     section(
@@ -187,5 +205,6 @@ const Home = ({ navigate }) =>
       ),
     ),
   )
+}
 
 export default Home

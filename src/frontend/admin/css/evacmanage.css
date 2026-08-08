@@ -1,0 +1,269 @@
+.evacmanage-page {
+  padding: 24px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  font-family: 'Inter', sans-serif;
+  color: #1f2937;
+}
+
+.evacmanage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.evacmanage-title h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+  color: #111827;
+}
+
+.evacmanage-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 10px 14px;
+  width: 260px;
+}
+
+.evacmanage-search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: #374151;
+  background: transparent;
+}
+
+.search-icon {
+  font-size: 14px;
+}
+
+.evacmanage-card,
+.evacuees-card {
+  background: #f5f7ff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+}
+
+.summary-table,
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.summary-table th,
+.summary-table td,
+.detail-table th,
+.detail-table td {
+  padding: 16px 18px;
+  text-align: left;
+  font-size: 14px;
+  vertical-align: middle;
+  border-bottom: 1px solid #f3f4f6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.summary-table thead th,
+.detail-table thead th {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: 12px;
+  color: #6b7280;
+  background: #f9fafb;
+}
+
+.summary-table tbody tr:hover,
+.detail-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.summary-table tbody tr.summary-selected {
+  background: #eef2ff;
+}
+
+.view-evacuees-btn,
+.view-btn,
+.export-btn,
+.page-btn {
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.view-evacuees-btn {
+  background: #2563eb;
+  color: #ffffff;
+  padding: 10px 14px;
+}
+
+.view-btn {
+  background: #ffffff;
+  color: #111827;
+  padding: 8px 14px;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.06);
+}
+
+.export-btn {
+  background: #000000;
+  color: #ffffff;
+  padding: 10px 18px;
+}
+
+.page-btn {
+  background: #f3f4f6;
+  color: #4b5563;
+  padding: 10px 14px;
+}
+
+.page-btn.active {
+  background: #111827;
+  color: #ffffff;
+}
+
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 22px;
+  background: #f9fafb;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 0 6px;
+  background: #eef4ff;
+  border-bottom: 1px solid #e5e7eb;
+  border-radius: 18px 18px 0 0;
+}
+
+.detail-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #111827;
+}
+
+.detail-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 18px 24px 24px;
+}
+
+.detail-controls input,
+.detail-controls select {
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #374151;
+  background: #ffffff;
+}
+
+.detail-controls select {
+  min-width: 150px;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.status-registered {
+  background: #ecfdf5;
+  color: #166534;
+}
+
+.status-evacuated {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.status-discharged {
+  background: #fef3c7;
+  color: #a16207;
+}
+
+.qr-code {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 40px;
+  background: #f3f4f6;
+  border-radius: 12px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.row-evacuated {
+  background: #f8fafc;
+}
+
+@media (max-width: 1200px) {
+  .evacmanage-page {
+    padding: 20px;
+  }
+
+  .evacmanage-header,
+  .detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .evacmanage-search,
+  .detail-controls {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .summary-table th,
+  .summary-table td,
+  .detail-table th,
+  .detail-table td {
+    padding: 12px 10px;
+  }
+
+  .evacmanage-search {
+    width: 100%;
+  }
+
+  .detail-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+
+  .summary-table th,
+  .summary-table td,
+  .detail-table th,
+  .detail-table td {
+    white-space: normal;
+  }
