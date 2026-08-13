@@ -1,0 +1,175 @@
+(/* Reports dashboard styles inspired by the provided mockup */)
+.reports-page {
+	padding: 20px;
+	font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+	color: #1f2937;
+}
+
+.reports-page h1 {
+	font-size: 20px;
+	margin-bottom: 12px;
+}
+
+.reports-header p {
+	margin: 4px 0 14px 0;
+	color: #6b7280;
+}
+
+.metric-row {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 16px;
+	margin-bottom: 18px;
+}
+
+.metric {
+	background: #fff;
+	border-radius: 10px;
+	padding: 18px;
+	box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 6px 12px rgba(16,24,40,0.06);
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.metric-title {
+	font-size: 12px;
+	color: #6b7280;
+}
+
+.metric-value {
+	font-size: 26px;
+	font-weight: 700;
+	color: #111827;
+}
+
+.metric-sub {
+	font-size: 12px;
+	color: #10b981;
+}
+
+.recent-reports,
+.evacuees-table,
+.grouped-barangays {
+	background: #fff;
+	border-radius: 10px;
+	padding: 16px;
+	box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 6px 12px rgba(16,24,40,0.06);
+	margin-bottom: 16px;
+}
+
+.recent-reports h2,
+.evacuees-table h2,
+.grouped-barangays h2 {
+	margin-top: 0;
+	margin-bottom: 10px;
+	font-size: 16px;
+}
+
+.recent-reports ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.recent-reports li {
+	display: flex;
+	justify-content: space-between;
+	padding: 10px 0;
+	border-bottom: 1px solid #f3f4f6;
+}
+
+.recent-reports li:last-child { border-bottom: none }
+
+.report-controls {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 14px;
+}
+
+.report-controls select,
+.report-controls input[type="file"],
+.report-controls .button {
+	padding: 8px 10px;
+	border-radius: 8px;
+	border: 1px solid #e5e7eb;
+	background: #fff;
+}
+
+.report-controls .button {
+	cursor: pointer;
+}
+
+.evacuees-table table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.evacuees-table th,
+.evacuees-table td {
+	text-align: left;
+	padding: 8px 10px;
+	border-bottom: 1px solid #f3f4f6;
+}
+
+.grouped-barangays .barangay-group {
+	margin-bottom: 12px;
+}
+
+.grouped-barangays h3 {
+	margin: 0 0 6px 0;
+	font-size: 14px;
+}
+
+/* Chart card and placeholders */
+.charts-row .chart-card,
+.chart-card {
+	background: #fff;
+	border-radius: 10px;
+	padding: 14px;
+	box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 6px 12px rgba(16,24,40,0.06);
+}
+
+.chart-card h3 { margin-top: 0; margin-bottom: 12px; }
+
+.chart-placeholder {
+	height: 260px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: linear-gradient(180deg,#ffffff 0%, #fbfdff 100%);
+	border-radius: 8px;
+}
+
+.donut-wrapper { display: flex; gap: 12px; align-items: center; }
+.donut-placeholder { width: 200px; height: 200px; border-radius: 50%; background: conic-gradient(#3b82f6 0 30%, #10b981 30% 55%, #f59e0b 55% 75%, #fb7185 75% 90%, #c7d2fe 90% 100%); display:flex; align-items:center; justify-content:center; }
+.donut-center { background:#fff; width:92px; height:92px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; }
+.donut-legend { list-style:none; padding:0; margin:0; }
+.donut-legend li { display:flex; align-items:center; gap:8px; padding:6px 0; }
+.legend-color { width:12px; height:12px; border-radius:3px; display:inline-block; }
+.legend-count { margin-left: 6px; color:#6b7280; }
+
+/* Lower row panels */
+.panel { background:#fff; border-radius:10px; padding:14px; box-shadow:0 1px 2px rgba(16,24,40,0.04),0 6px 12px rgba(16,24,40,0.06); }
+.summary-list { list-style:none; padding:0; margin:0; }
+.summary-list li { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #f3f4f6 }
+.summary-list li:last-child { border-bottom:none }
+
+.recent-list { list-style:none; padding:0; margin:0; }
+.recent-list li { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #f3f4f6 }
+.recent-list li:last-child { border-bottom:none }
+.report-time { color:#6b7280; font-size:12px }
+.view-full { display:inline-block; margin-top:8px; color:#2563eb; text-decoration:none }
+.download { color:#2563eb; text-decoration:none }
+
+/* Responsive */
+@media (max-width: 900px) {
+	.metric-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+	.metric-row { grid-template-columns: 1fr; }
+	.report-controls { flex-direction: column; align-items: stretch; }
+}
+

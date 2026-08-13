@@ -6,6 +6,7 @@ import Home from './frontend/admin/js/home.js'
 import AlertPage from './frontend/admin/js/alert.js'
 import EvacManagePage from './frontend/admin/js/evacmanage.js'
 import EvacuationCenterPage from './frontend/admin/js/evacuationcenter.js'
+import ReportPage from './frontend/admin/js/report.js'
 
 function App() {
   const [page, setPage] = useState('login')
@@ -16,6 +17,7 @@ function App() {
     if (page === 'alert') return <AlertPage />
     if (page === 'evacmanage') return <EvacManagePage />
     if (page === 'evacuationcenter') return <EvacuationCenterPage />
+    if (page === 'report') return <ReportPage />
     return <div>Page not found</div>
   }
 

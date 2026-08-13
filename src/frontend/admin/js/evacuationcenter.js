@@ -78,6 +78,8 @@ function EvacuationCenterPage() {
     file: null,
   })
   const [imagePreview, setImagePreview] = React.useState('')
+  const fileInputRef = React.useRef(null)
+  const [editingCenterId, setEditingCenterId] = React.useState(null)
 
   const filteredCenters = React.useMemo(() => {
     return centers.filter((center) => {
@@ -155,6 +157,26 @@ function EvacuationCenterPage() {
 
     setCenters((prev) => [center, ...prev])
     handleCloseModal()
+  }
+
+  const handleDeleteCenter = (id) => {
+    const ok = window.confirm('Are you sure you want to delete this evacuation center?')
+    if (!ok) return
+    setCenters((prev) => prev.filter((c) => c.id !== id))
+  }
+
+  const handleChangePhotoClick = (id) => {
+    setEditingCenterId(id)
+    if (fileInputRef.current) fileInputRef.current.click()
+  }
+
+  const handlePhotoFileChange = (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    const imageUrl = URL.createObjectURL(file)
+    setCenters((prev) => prev.map((c) => (c.id === editingCenterId ? { ...c, image: imageUrl } : c)))
+    setEditingCenterId(null)
+    event.target.value = ''
   }
 
   const modalElement = modalOpen
@@ -359,6 +381,7 @@ function EvacuationCenterPage() {
       ),
     ),
     modalElement,
+    section('input', { type: 'file', ref: fileInputRef, style: { display: 'none' }, accept: 'image/*', onChange: handlePhotoFileChange }),
     section(
       'div',
       { className: 'evacuation-table-card' },
@@ -438,6 +461,8 @@ function EvacuationCenterPage() {
                 section('div', { className: 'actions-group' },
                   section('button', { type: 'button', className: 'action-button action-button--primary' }, 'View Evacuees'),
                   section('button', { type: 'button', className: 'action-button action-button--secondary' }, 'View Location'),
+                  section('button', { type: 'button', className: 'action-button action-button--tertiary', onClick: () => handleChangePhotoClick(center.id) }, 'Change Photo'),
+                  section('button', { type: 'button', className: 'action-button action-button--danger', onClick: () => handleDeleteCenter(center.id) }, 'Delete'),
                 ),
               ),
             )
