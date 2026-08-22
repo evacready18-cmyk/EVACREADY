@@ -49,7 +49,7 @@ function LoginHomepage() {
           </p>
           <div className="homepage-actions">
             <a className="homepage-link primary" href="#login">
-              Sign in
+              Create account
             </a>
             <a className="homepage-link secondary" href="#learn-more">
               Learn more

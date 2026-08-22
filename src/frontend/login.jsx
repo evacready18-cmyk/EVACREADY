@@ -21,7 +21,7 @@ export function initLogin() {
   })
 }
 
-function LoginHomepage({ onContinue }) {
+function LoginHomepage({ onContinue, onCreateAccount, onGoogleAccount }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -43,9 +43,9 @@ function LoginHomepage({ onContinue }) {
             Coordinate alerts, track evacuation centers, and support your community in real time.
           </p>
           <div className="homepage-actions">
-            <a className="homepage-link primary" href="#login">
-              Sign in
-            </a>
+            <button className="homepage-link primary" type="button" onClick={onCreateAccount}>
+              Create account
+            </button>
             <a className="homepage-link secondary" href="#learn-more">
               Learn more
             </a>
@@ -113,6 +113,9 @@ function LoginHomepage({ onContinue }) {
 
           <button className="login-submit" type="submit">
             Continue to Dashboard
+          </button>
+          <button className="google-submit" type="button" onClick={onGoogleAccount}>
+            Continue with Google
           </button>
         </form>
       </div>

@@ -69,6 +69,9 @@
   border-radius: 999px;
   text-decoration: none;
   font-weight: 700;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
 }
 
 .homepage-link.primary {
@@ -151,6 +154,43 @@
   color: rgba(255, 255, 255, 0.65);
 }
 
+.login-field select {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: #253b76;
+  color: #ffffff;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.register-card {
+  max-width: 520px;
+}
+
+.register-card h1 {
+  margin: 8px 0 10px;
+  color: #ffffff;
+  font-size: 2.25rem;
+}
+
+.register-intro {
+  margin: 0 0 24px;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.6;
+}
+
+.register-form {
+  display: grid;
+  gap: 2px;
+}
+
+.register-back {
+  width: 100%;
+  margin-top: 10px;
+}
+
 .login-submit {
   width: 100%;
   padding: 14px 16px;
@@ -166,6 +206,21 @@
 .login-submit:hover {
   background: #1d4ed8;
   transform: translateY(-1px);
+}
+
+.google-submit {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: #ffffff;
+  color: #1f2937;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.google-submit:hover {
+  background: #f3f4f6;
 }
 
 .login-footer {
