@@ -35,9 +35,14 @@ function RegisterForm({ onSubmit, onBack, onGoogleAccount }) {
         <p className="register-intro">Set up access for your role in the emergency response team.</p>
       <form className="register-form" onSubmit={handleSubmit}>
         <div className="login-field">
+          <label htmlFor="email">Email</label>
+          <input id="email" name="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+        </div>
+
+        <div className="login-field">
           <label htmlFor="role">Account type</label>
           <select id="role" name="role" value={role} onChange={e => setRole(e.target.value)} required>
-            <option value="user">User</option>
+            <option value="user">Users</option>
             <option value="staff">Staff</option>
             <option value="admin">Admin</option>
           </select>
@@ -49,20 +54,15 @@ function RegisterForm({ onSubmit, onBack, onGoogleAccount }) {
         </div>
 
         <div className="login-field">
-          <label htmlFor="email">Email</label>
-          <input id="email" name="email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
-        </div>
-
-        <div className="login-field">
           <label htmlFor="password">Password</label>
-          <input id="password" name="password" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+          <input id="password" name="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
         </div>
 
         {role !== 'admin' && (
-          <div className="login-field">
-            <label htmlFor="phone">Phone number</label>
-            <input id="phone" name="phone" type="tel" placeholder="09XXXXXXXXX" value={phone} onChange={e => setPhone(e.target.value)} required />
-          </div>
+        <div className="login-field">
+          <label htmlFor="phone">Phone number</label>
+          <input id="phone" name="phone" type="tel" placeholder="09XXXXXXXXX" value={phone} onChange={e => setPhone(e.target.value)} required />
+        </div>
         )}
 
         <div className="login-field">

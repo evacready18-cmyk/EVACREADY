@@ -11,7 +11,7 @@ const sidebarLinks = [
   { text: 'User Management', page: 'usermanagement' },
 ]
 
-const Sidebar = ({ current, navigate }) =>
+const Sidebar = ({ current, navigate, onLogout }) =>
   React.createElement(
     'aside',
     { className: 'sidebar' },
@@ -33,6 +33,11 @@ const Sidebar = ({ current, navigate }) =>
           },
           link.text,
         ),
+      ),
+      React.createElement(
+        'button',
+        { className: 'sidebar-logout', type: 'button', onClick: onLogout },
+        'Log out',
       ),
     ),
   )

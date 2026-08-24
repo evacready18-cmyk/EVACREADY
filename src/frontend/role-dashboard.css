@@ -1,0 +1,102 @@
+.role-dashboard {
+  min-height: 100vh;
+  padding: 56px clamp(24px, 6vw, 96px);
+  color: #172033;
+  background: linear-gradient(135deg, #f5f8ff 0%, #eef8f3 100%);
+  box-sizing: border-box;
+}
+
+.role-dashboard__header {
+  max-width: 720px;
+}
+
+.role-dashboard__label {
+  margin: 0 0 12px;
+  color: #237a68;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.role-dashboard h1 {
+  margin: 0;
+  color: #172033;
+  font-size: clamp(2.2rem, 5vw, 4.5rem);
+  line-height: 1.05;
+}
+
+.role-dashboard__description {
+  max-width: 600px;
+  margin-top: 20px;
+  color: #526078;
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.role-dashboard__logout,
+.staff-dashboard__logout {
+  margin-top: 28px;
+  padding: 12px 20px;
+  border: 1px solid #237a68;
+  border-radius: 8px;
+  color: #237a68;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.role-dashboard__logout:hover,
+.staff-dashboard__logout:hover {
+  color: #ffffff;
+  background: #237a68;
+}
+
+.role-dashboard__actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  max-width: 900px;
+  margin-top: 48px;
+}
+
+.role-dashboard__action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 88px;
+  padding: 20px 22px;
+  border: 1px solid rgba(35, 122, 104, 0.2);
+  border-radius: 8px;
+  color: #172033;
+  background: rgba(255, 255, 255, 0.82);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.role-dashboard__action:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(37, 61, 92, 0.12);
+}
+
+.role-dashboard--staff .role-dashboard__label {
+  color: #b45f28;
+}
+
+.role-dashboard--staff .role-dashboard__action {
+  border-color: rgba(180, 95, 40, 0.22);
+}
+
+@media (max-width: 640px) {
+  .role-dashboard {
+    padding: 36px 20px;
+  }
+
+  .role-dashboard__actions {
+    margin-top: 32px;
+  }
+}

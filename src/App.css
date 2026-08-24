@@ -12,6 +12,35 @@
   box-sizing: border-box;
 }
 
+.staff-shell .main-content {
+  margin-left: 260px;
+}
+
+.user-shell .main-content {
+  margin-left: 260px;
+}
+
+@media (max-width: 1024px) {
+  .staff-shell .main-content,
+  .user-shell .main-content {
+    margin-left: 220px;
+    padding: 28px;
+  }
+}
+
+@media (max-width: 640px) {
+  .staff-shell,
+  .user-shell {
+    display: block;
+  }
+
+  .staff-shell .main-content,
+  .user-shell .main-content {
+    margin-left: 0;
+    padding: 16px;
+  }
+}
+
 .page-header h1 {
   margin: 0;
   font-size: 42px;

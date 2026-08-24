@@ -1,0 +1,114 @@
+.user-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 2;
+  display: flex;
+  width: 260px;
+  height: 100vh;
+  padding: 32px 24px;
+  flex-direction: column;
+  box-sizing: border-box;
+  color: #ffffff;
+  background: linear-gradient(180deg, #1e40af 0%, #2563eb 100%);
+  box-shadow: 4px 0 30px rgba(15, 23, 42, 0.1);
+}
+
+.user-sidebar__brand {
+  margin-bottom: 36px;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.user-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.user-sidebar__link,
+.user-sidebar__logout {
+  display: block;
+  padding: 14px 18px;
+  border-radius: 16px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 15px;
+  text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.user-sidebar__link:hover,
+.user-sidebar__link.active {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.user-sidebar__logout {
+  width: 100%;
+  margin-top: auto;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.user-sidebar__logout:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+@media (max-width: 1024px) {
+  .user-sidebar {
+    width: 220px;
+    padding: 26px 16px;
+  }
+
+  .user-sidebar__brand {
+    margin-bottom: 26px;
+    font-size: 23px;
+  }
+
+  .user-sidebar__nav {
+    gap: 8px;
+  }
+
+  .user-sidebar__link,
+  .user-sidebar__logout {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .user-sidebar {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .user-sidebar__brand {
+    margin-bottom: 14px;
+    font-size: 21px;
+  }
+
+  .user-sidebar__nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .user-sidebar__link,
+  .user-sidebar__logout {
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+  }
+
+  .user-sidebar__logout {
+    margin-top: 10px;
+  }
+}

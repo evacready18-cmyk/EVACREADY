@@ -13,8 +13,9 @@ const homeLinks = [
 
 const section = React.createElement
 
-function Home({ navigate }) {
+function Home({ navigate, onLogout, role = 'admin' }) {
   const [now, setNow] = React.useState(new Date())
+  const roleLabel = role === 'user' ? 'Users' : role.charAt(0).toUpperCase() + role.slice(1)
 
   React.useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000)
@@ -41,7 +42,7 @@ function Home({ navigate }) {
       section(
         'div',
         null,
-        section('p', { className: 'home-subtitle' }, 'Welcome back, Admin!'),
+        section('p', { className: 'home-subtitle' }, `Welcome back, ${roleLabel}!`),
         section('h1', null, 'Here’s what’s happening in Isabela today'),
       ),
       section(

@@ -8,33 +8,33 @@ export function initLogin() {
   loginForm.addEventListener('submit', function (event) {
     event.preventDefault()
 
-    const email = loginForm.querySelector('input[name="email"]').value.trim()
+    const phone = loginForm.querySelector('input[name="phone"]').value.trim()
     const password = loginForm.querySelector('input[name="password"]').value.trim()
 
-    if (!email || !password) {
-      alert('Please enter both email and password.')
+    if (!phone || !password) {
+      alert('Please enter both phone number and password.')
       return
     }
 
-    alert(`Logged in as ${email}`)
+    alert(`Logged in as ${phone}`)
     loginForm.reset()
   })
 }
 
 function LoginHomepage() {
-  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
 
   const handleSubmit = (event) => {
     event.preventDefault()
 
-    if (!email || !password) {
-      alert('Please enter both email and password.')
+    if (!phone || !password) {
+      alert('Please enter both phone number and password.')
       return
     }
 
-    alert(`Logged in as ${email}`)
-    setEmail('')
+    alert(`Logged in as ${phone}`)
+    setPhone('')
     setPassword('')
   }
 
@@ -59,14 +59,15 @@ function LoginHomepage() {
 
         <form className="login-form homepage-form" onSubmit={handleSubmit}>
           <div className="login-field">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="phone">Phone number</label>
             <input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              id="phone"
+              name="phone"
+              type="tel"
+              placeholder="09XXXXXXXXX"
+              value={phone}
+              onChange={(event) => setPhone(event.target.value)}
+              required
             />
           </div>
 

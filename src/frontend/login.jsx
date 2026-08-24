@@ -28,9 +28,13 @@ function LoginHomepage({ onContinue, onCreateAccount, onGoogleAccount }) {
 
   const handleSubmit = (event) => {
     event.preventDefault()
+    if (!email || !password) {
+      alert('Please enter both email and password.')
+      return
+    }
     setEmail('')
     setPassword('')
-    if (onContinue) onContinue()
+    if (onContinue) onContinue({ email, password })
   }
 
   return (
@@ -62,6 +66,7 @@ function LoginHomepage({ onContinue, onCreateAccount, onGoogleAccount }) {
               placeholder="you@example.com"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              required
             />
           </div>
 
@@ -75,6 +80,7 @@ function LoginHomepage({ onContinue, onCreateAccount, onGoogleAccount }) {
                 placeholder="Enter your password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
+                required
               />
               <button
                 type="button"
