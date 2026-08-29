@@ -208,6 +208,34 @@
   transform: translateY(-1px);
 }
 
+.login-submit:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 8px;
+}
+
+.google-submit .spinner {
+  border-color: rgba(31, 41, 55, 0.3);
+  border-top-color: #1f2937;
+  margin-right: 4px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .google-submit {
   width: 100%;
   padding: 14px 16px;
@@ -217,10 +245,20 @@
   color: #1f2937;
   font-weight: 700;
   cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-.google-submit:hover {
+.google-submit:hover:not(:disabled) {
   background: #f3f4f6;
+}
+
+.google-submit:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
 }
 
 .login-footer {

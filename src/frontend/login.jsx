@@ -25,6 +25,7 @@ function LoginHomepage({ onContinue, onCreateAccount, onGoogleAccount }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -32,9 +33,12 @@ function LoginHomepage({ onContinue, onCreateAccount, onGoogleAccount }) {
       alert('Please enter both email and password.')
       return
     }
+    setIsLoading(true)
     setEmail('')
     setPassword('')
     if (onContinue) onContinue({ email, password })
+    // Simulate loading time - remove this in production when you have real auth
+    setTimeout(() => setIsLoading(false), 1500)
   }
 
   return (
@@ -117,11 +121,28 @@ function LoginHomepage({ onContinue, onCreateAccount, onGoogleAccount }) {
             </div>
           </div>
 
-          <button className="login-submit" type="submit">
-            Continue to Dashboard
+          <button className="login-submit" type="submit" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <span className="spinner"></span>
+                <span>Signing in...</span>
+              </>
+            ) : (
+              'Sign In'
+            )}
           </button>
-          <button className="google-submit" type="button" onClick={onGoogleAccount}>
-            Continue with Google
+          <button className="google-submit" type="button" onClick={() => {
+            setIsLoading(true)
+            onGoogleAccount()
+          }} disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <span className="spinner"></span>
+                <span>Signing in...</span>
+              </>
+            ) : (
+              '🔵 Continue with Google'
+            )}
           </button>
         </form>
       </div>

@@ -9,14 +9,17 @@ function RegisterForm({ onSubmit, onBack, onGoogleAccount }) {
   const [password, setPassword] = useState('')
   const [phone, setPhone] = useState('')
   const [barangay, setBarangay] = useState('')
+  const [idPhoto, setIdPhoto] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!name || !email || !password || !barangay || (role !== 'admin' && !phone)) {
-      alert('Please fill all required fields, including phone number for users and staff.')
+    if (!name || !email || !password || !barangay || !phone || !idPhoto) {
+      alert('Please fill all required fields, including phone number and ID photo.')
       return
     }
-    const payload = { role, name, email, password, barangay, ...(role !== 'admin' && { phone }) }
+    setIsLoading(true)
+    const payload = { role, name, email, password, barangay, phone, idPhoto }
     if (onSubmit) onSubmit(payload)
     else alert('Registered: ' + JSON.stringify(payload))
     setName('')
@@ -24,7 +27,16 @@ function RegisterForm({ onSubmit, onBack, onGoogleAccount }) {
     setPassword('')
     setPhone('')
     setBarangay('')
+    setIdPhoto(null)
     setRole('user')
+    setIsLoading(false)
+  }
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setIdPhoto(file)
+    }
   }
 
   return (
@@ -43,8 +55,6 @@ function RegisterForm({ onSubmit, onBack, onGoogleAccount }) {
           <label htmlFor="role">Account type</label>
           <select id="role" name="role" value={role} onChange={e => setRole(e.target.value)} required>
             <option value="user">Users</option>
-            <option value="staff">Staff</option>
-            <option value="admin">Admin</option>
           </select>
         </div>
 
@@ -58,12 +68,16 @@ function RegisterForm({ onSubmit, onBack, onGoogleAccount }) {
           <input id="password" name="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
         </div>
 
-        {role !== 'admin' && (
         <div className="login-field">
           <label htmlFor="phone">Phone number</label>
           <input id="phone" name="phone" type="tel" placeholder="09XXXXXXXXX" value={phone} onChange={e => setPhone(e.target.value)} required />
         </div>
-        )}
+
+        <div className="login-field">
+          <label htmlFor="idPhoto">ID Photo</label>
+          <input id="idPhoto" name="idPhoto" type="file" accept="image/*" onChange={handlePhotoChange} required />
+          {idPhoto && <p style={{ fontSize: '12px', color: '#bfdbfe', marginTop: '4px' }}>Selected: {idPhoto.name}</p>}
+        </div>
 
         <div className="login-field">
           <label htmlFor="barangay">Barangay</label>
@@ -76,8 +90,18 @@ function RegisterForm({ onSubmit, onBack, onGoogleAccount }) {
         </div>
 
         <button className="login-submit" type="submit">Create account</button>
-        <button className="google-submit" type="button" onClick={onGoogleAccount}>
-          Continue with Google
+        <button className="google-submit" type="button" onClick={() => {
+          setIsLoading(true)
+          onGoogleAccount()
+        }} disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <span className="spinner"></span>
+              <span>Signing in...</span>
+            </>
+          ) : (
+            '🔵 Continue with Google'
+          )}
         </button>
         <button className="homepage-link secondary register-back" type="button" onClick={onBack}>
           Back to sign in

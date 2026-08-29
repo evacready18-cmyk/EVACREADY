@@ -7,6 +7,8 @@ import {
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 
 // Your web app's Firebase configuration
@@ -39,4 +41,18 @@ export async function signInWithEmailPassword(email, password) {
 
 export async function signOutUser() {
   await signOut(auth)
+}
+
+export async function signInWithGoogle() {
+  const provider = new GoogleAuthProvider()
+  const credential = await signInWithPopup(auth, provider)
+  return credential.user
+}
+
+export function getCurrentUser() {
+  return auth.currentUser
+}
+
+export function onAuthStateChanged(callback) {
+  return auth.onAuthStateChanged(callback)
 }
