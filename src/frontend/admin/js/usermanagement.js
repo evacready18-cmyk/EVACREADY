@@ -1,7 +1,7 @@
 import React from 'react'
 import '../css/usermanagement.css'
 import { BARANGAYS } from '../../data/barangays.js'
-import { createStaffAccount, subscribeToUsers, updateUserProfileFields, deleteUserProfile } from '../../../services/firebase.js'
+import { activateResidentAtCenter, createStaffAccount, deactivateResidentFromCenter, subscribeToEvacuationCenters, subscribeToUsers, updateUserProfileFields, deleteUserProfile } from '../../../services/firebase.js'
 
 const section = React.createElement
 
@@ -17,7 +17,7 @@ function normalizeUser(raw) {
     id: raw.uid,
     name: raw.name || '',
     email: raw.email || '',
-    role: raw.role ? raw.role.charAt(0).toUpperCase() + raw.role.slice(1) : 'User',
+    role: raw.role === 'user' ? 'Resident' : raw.role ? raw.role.charAt(0).toUpperCase() + raw.role.slice(1) : 'Resident',
     status: raw.status || 'Active',
     joinDate: formatJoinDate(raw),
     barangay: raw.barangay || '',
@@ -33,6 +33,10 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
   const [actionType, setActionType] = React.useState(null)
   const [newName, setNewName] = React.useState('')
   const [newBarangay, setNewBarangay] = React.useState('')
+  const [centers, setCenters] = React.useState([])
+  const [activationUser, setActivationUser] = React.useState(null)
+  const [activationCenterId, setActivationCenterId] = React.useState('')
+  const [isActivating, setIsActivating] = React.useState(false)
   const [showCreateStaff, setShowCreateStaff] = React.useState(false)
   const [staffForm, setStaffForm] = React.useState({
     name: '',
@@ -47,6 +51,11 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
     })
     return unsubscribe
   }, [allowedRole, barangay])
+
+  React.useEffect(() => {
+    if (allowedRole === 'Staff') return undefined
+    return subscribeToEvacuationCenters(setCenters)
+  }, [allowedRole])
 
   const filteredUsers = React.useMemo(() => {
     let result = users
@@ -116,6 +125,37 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
     handleCloseModal()
   }
 
+  const handleToggleStatus = async (user) => {
+    if (user.status !== 'Active') {
+      const availableCenters = centers.filter((center) => center.barangay === user.barangay && Number(center.availableSlots) > 0)
+      setActivationCenterId(availableCenters[0]?.id || '')
+      setActivationUser(user)
+      return
+    }
+    try {
+      await deactivateResidentFromCenter(user.id)
+    } catch (error) {
+      console.error('Error updating resident status:', error)
+      alert(`Error updating resident status: ${error.message}`)
+    }
+  }
+
+  const handleActivateAtCenter = async () => {
+    if (!activationUser || !activationCenterId) return
+    setIsActivating(true)
+    try {
+      await activateResidentAtCenter(activationCenterId, activationUser.id)
+      alert(`${activationUser.name} is now active and has been added to Evacuees.`)
+      setActivationUser(null)
+      setActivationCenterId('')
+    } catch (error) {
+      console.error('Error activating resident:', error)
+      alert(`Error activating resident: ${error.message}`)
+    } finally {
+      setIsActivating(false)
+    }
+  }
+
   const handleChangeBarangay = async (userId) => {
     if (!newBarangay.trim()) {
       alert('Please select a barangay')
@@ -181,8 +221,8 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
       section(
         'div',
         null,
-        section('h2', null, 'User Management'),
-        section('p', null, allowedRole === 'Staff' ? 'Manage staff roles, access, and accounts' : 'Manage user roles, access, and accounts'),
+        section('h2', null, allowedRole === 'Staff' ? 'Staff Management' : 'User Management'),
+        section('p', null, allowedRole === 'Staff' ? 'Manage staff roles, access, and accounts' : 'Manage resident roles, access, and accounts'),
       ),
       allowedRole === 'Staff' && section('button', {
         className: 'btn-create-staff',
@@ -201,7 +241,6 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
           value: searchQuery,
           onChange: (e) => setSearchQuery(e.target.value),
         }),
-        section('span', { className: 'search-icon' }, '🔍'),
       ),
       section(
         'div',
@@ -235,6 +274,7 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
             section('th', null, 'Role'),
             section('th', null, 'Status'),
             section('th', null, 'Barangay'),
+            section('th', null, 'Date Created'),
             section('th', null, 'Action'),
           ),
         ),
@@ -254,6 +294,7 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
                 section('span', { className: `status-badge status-${user.status.toLowerCase()}` }, user.status)
               ),
               section('td', null, user.barangay),
+              section('td', null, user.joinDate || 'Not recorded'),
               section('td', null,
                 section(
                   'div',
@@ -271,6 +312,10 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
                     className: 'btn-action btn-location',
                     onClick: () => handleAction(user, 'viewBarangay'),
                   }, 'View Barangay'),
+                  allowedRole !== 'Staff' && section('button', {
+                    className: 'btn-action btn-edit',
+                    onClick: () => handleToggleStatus(user),
+                  }, user.status === 'Active' ? 'Set Inactive' : 'Set Active'),
                   allowedRole === 'Staff' && section('button', {
                     className: 'btn-action btn-edit',
                     onClick: () => handleAction(user, 'changeBarangay'),
@@ -285,7 +330,7 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
           ) : section(
             'tr',
             null,
-            section('td', { colSpan: 6, className: 'no-data' }, allowedRole === 'Staff' ? 'No staff found' : `No users found${barangay ? ` in ${barangay}` : ''}`)
+            section('td', { colSpan: 7, className: 'no-data' }, allowedRole === 'Staff' ? 'No staff found' : `No residents found${barangay ? ` in ${barangay}` : ''}`)
           )
         ),
       ),
@@ -384,6 +429,27 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
             section('button', { className: 'btn-cancel', onClick: handleCloseModal }, 'Cancel'),
             section('button', { className: 'btn-delete-confirm', onClick: () => handleDeleteUser(selectedUser.id) }, 'Delete'),
           ),
+        ),
+      ),
+    ),
+    activationUser && section(
+      'div',
+      { className: 'modal-overlay', onClick: () => setActivationUser(null) },
+      section(
+        'div',
+        { className: 'modal-content', onClick: (event) => event.stopPropagation() },
+        section('h3', null, 'Activate Resident'),
+        section('div', { className: 'modal-body' },
+          section('p', null, `Activate ${activationUser.name} and check them into an evacuation center.`),
+          section('select', { className: 'modal-input', value: activationCenterId, onChange: (event) => setActivationCenterId(event.target.value), disabled: isActivating },
+            section('option', { value: '' }, 'Select evacuation center'),
+            ...centers.filter((center) => center.barangay === activationUser.barangay && Number(center.availableSlots) > 0)
+              .map((center) => section('option', { key: center.id, value: center.id }, `${center.name} (${center.availableSlots} slots)`)),
+          ),
+        ),
+        section('div', { className: 'modal-actions' },
+          section('button', { className: 'btn-cancel', onClick: () => setActivationUser(null), disabled: isActivating }, 'Cancel'),
+          section('button', { className: 'btn-confirm', onClick: handleActivateAtCenter, disabled: !activationCenterId || isActivating }, isActivating ? 'Activating...' : 'Activate'),
         ),
       ),
     ),

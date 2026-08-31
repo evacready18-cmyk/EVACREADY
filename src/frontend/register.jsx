@@ -12,7 +12,7 @@ function RegisterForm({ onSubmit, onBack, onGoogleAccount }) {
   const [idPhoto, setIdPhoto] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!name || !email || !password || !barangay || !phone || !idPhoto) {
       alert('Please fill all required fields, including phone number and ID photo.')
@@ -20,16 +20,23 @@ function RegisterForm({ onSubmit, onBack, onGoogleAccount }) {
     }
     setIsLoading(true)
     const payload = { role, name, email, password, barangay, phone, idPhoto }
-    if (onSubmit) onSubmit(payload)
-    else alert('Registered: ' + JSON.stringify(payload))
-    setName('')
-    setEmail('')
-    setPassword('')
-    setPhone('')
-    setBarangay('')
-    setIdPhoto(null)
-    setRole('user')
-    setIsLoading(false)
+    try {
+      if (onSubmit) {
+        const wasRegistered = await onSubmit(payload)
+        if (!wasRegistered) return
+      } else {
+        alert('Registered: ' + JSON.stringify(payload))
+      }
+      setName('')
+      setEmail('')
+      setPassword('')
+      setPhone('')
+      setBarangay('')
+      setIdPhoto(null)
+      setRole('user')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handlePhotoChange = (e) => {
@@ -54,7 +61,7 @@ function RegisterForm({ onSubmit, onBack, onGoogleAccount }) {
         <div className="login-field">
           <label htmlFor="role">Account type</label>
           <select id="role" name="role" value={role} onChange={e => setRole(e.target.value)} required>
-            <option value="user">Users</option>
+            <option value="user">Resident</option>
           </select>
         </div>
 
@@ -89,7 +96,9 @@ function RegisterForm({ onSubmit, onBack, onGoogleAccount }) {
           </select>
         </div>
 
-        <button className="login-submit" type="submit">Create account</button>
+        <button className="login-submit" type="submit" disabled={isLoading}>
+          {isLoading ? 'Creating account...' : 'Create account'}
+        </button>
         <button className="google-submit" type="button" onClick={() => {
           setIsLoading(true)
           onGoogleAccount()

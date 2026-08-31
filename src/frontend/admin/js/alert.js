@@ -115,7 +115,7 @@ const AlertPage = () => {
               },
               section('option', { value: 'evacuees' }, 'Evacuees'),
               section('option', { value: 'staff' }, 'Staff'),
-              section('option', { value: 'all' }, 'All Users'),
+              section('option', { value: 'all' }, 'All Residents'),
             ),
           ),
           section(

@@ -5,12 +5,12 @@ import LoginHomepage from './frontend/login.jsx'
 import RegisterForm from './frontend/register.jsx'
 import Home from './frontend/admin/js/home.js'
 import AlertPage from './frontend/admin/js/alert.js'
-import EvacManagePage from './frontend/admin/js/evacmanage.js'
-import EvacuationCenterPage from './frontend/admin/js/evacuationcenter.js'
-import ReportPage from './frontend/admin/js/report.js'
+import EvacManagePage from './frontend/admin/js/evacmanage.jsx'
+import EvacuationCenterPage from './frontend/admin/js/evacuationcenter.jsx'
+import ReportPage from './frontend/admin/js/report.jsx'
 import SettingsPage from './frontend/admin/js/settings.js'
 import UserManagementPage from './frontend/admin/js/usermanagement.js'
-import { registerWithEmailPassword, signInWithEmailPassword, signOutUser, onAuthStateChanged, signInWithGoogle, getUserProfile, subscribeToUserProfile, syncUserProfile } from './services/firebase.js'
+import { registerWithEmailPassword, signInWithEmailPassword, signOutUser, onAuthStateChanged, signInWithGoogle, getUserProfile, setCurrentStaffStatus, subscribeToUserProfile } from './services/firebase.js'
 import StaffSidebar from './frontend/staff/js/sidebar.jsx'
 import StaffSection from './frontend/staff/js/section.jsx'
 import UserSidebar from './frontend/user/js/sidebar.jsx'
@@ -36,18 +36,17 @@ function App() {
 
   // Resolves role/barangay from the Firestore profile (authoritative, cross-device),
   // falling back to the localStorage values used for legacy/manually-created accounts.
-  // Ensures a profile doc always exists so security rules can identify admins.
+  // Profile creation remains in the sign-in providers, avoiding a competing write
+  // while an email registration is still saving its complete resident profile.
   const resolveRoleAndBarangay = async (uid, email) => {
     const emailKey = `evacready-role:${email.trim().toLowerCase()}`
-    let role = window.localStorage.getItem(emailKey) || 'admin'
+    let role = window.localStorage.getItem(emailKey) || 'user'
     let barangay = window.localStorage.getItem(`${emailKey}-barangay`) || ''
     try {
       const profile = await getUserProfile(uid)
       if (profile) {
         role = profile.role || role
         barangay = profile.barangay || barangay
-      } else {
-        await syncUserProfile({ uid, email, displayName: '' }, { role, barangay, provider: 'email' })
       }
     } catch (error) {
       console.error('Error loading user profile:', error)
@@ -89,12 +88,23 @@ function App() {
   }
 
   const handleRegister = async (payload) => {
+    const emailKey = `evacready-role:${payload.email.trim().toLowerCase()}`
+    window.localStorage.setItem(emailKey, payload.role)
     try {
-      await registerWithEmailPassword(payload)
-      window.localStorage.setItem(`evacready-role:${payload.email.trim().toLowerCase()}`, payload.role)
-      setPage(payload.role === 'staff' ? 'staff-evacuees' : payload.role === 'user' ? 'user-information' : `${payload.role}-dashboard`)
+      const user = await registerWithEmailPassword(payload)
+      setCurrentUid(user.uid)
+      if (payload.role === 'staff') {
+        setStaffBarangay(payload.barangay)
+        setPage('staff-evacuees')
+      } else if (payload.role === 'admin') {
+        setPage('admin-dashboard')
+      } else {
+        setPage('user-information')
+      }
+      return true
     } catch (error) {
       alert(error.message)
+      return false
     }
   }
 
@@ -119,6 +129,7 @@ function App() {
 
   const handleLogout = async () => {
     try {
+      if (page.startsWith('staff-')) await setCurrentStaffStatus('Inactive')
       await signOutUser()
       setPage('login')
     } catch (error) {
@@ -135,12 +146,12 @@ function App() {
     }
     if (page === 'admin-dashboard' || page === 'home' || page === 'dashboard') return <Home navigate={setPage} onLogout={handleLogout} />
     if (page === 'usermanagement') return <UserManagementPage allowedRole="Staff" />
-    if (page.startsWith('user-')) return <UserSection page={page} />
-    if (page === 'staff-evacuees') return <EvacManagePage />
+    if (page.startsWith('user-')) return <UserSection page={page} currentUid={currentUid} />
+    if (page === 'staff-evacuees') return <EvacManagePage barangay={staffBarangay} />
     if (page === 'staff-usermanagement') return <UserManagementPage allowedRole="User" barangay={staffBarangay} />
     if (page === 'staff-alert') return <AlertPage />
     if (page === 'staff-evacuation-center') return <EvacuationCenterPage />
-    if (page === 'staff-report') return <ReportPage />
+    if (page === 'staff-report') return <ReportPage barangay={staffBarangay} />
     if (page === 'staff-settings') return <SettingsPage />
     if (page.startsWith('staff-')) return <StaffSection page={page} />
     if (page === 'alert') return <AlertPage />

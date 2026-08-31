@@ -1,32 +1,66 @@
-/* Reports dashboard styles inspired by the provided mockup */
 .reports-page {
-	padding: 20px;
-	font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
-	color: #1f2937;
+	min-height: 100vh;
+	padding: 24px;
+	background: #f8fafc;
+	color: #1e293b;
 }
 
 .reports-page h1 {
-	font-size: 20px;
-	margin-bottom: 12px;
+	margin: 0 0 8px;
+	font-size: 28px;
+	font-weight: 700;
+	color: #0f172a;
 }
 
 .reports-header p {
-	margin: 4px 0 14px 0;
-	color: #6b7280;
+	margin: 0;
+	color: #64748b;
+	font-size: 14px;
+}
+
+.reports-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: start;
+	gap: 16px;
+	margin-bottom: 24px;
+}
+
+.report-print-button {
+	border: none;
+	border-radius: 8px;
+	padding: 10px 16px;
+	background: #10b981;
+	color: #ffffff;
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.report-print-heading {
+	display: none;
+}
+
+.report-table-wrap {
+	overflow-x: auto;
+}
+
+.report-controls input[type="search"] {
+	min-width: 260px;
 }
 
 .metric-row {
 	display: grid;
-	grid-template-columns: repeat(4, 1fr);
+	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 16px;
-	margin-bottom: 18px;
+	margin-bottom: 24px;
 }
 
 .metric {
-	background: #fff;
-	border-radius: 10px;
-	padding: 18px;
-	box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 6px 12px rgba(16,24,40,0.06);
+	background: #ffffff;
+	border-radius: 12px;
+	padding: 16px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
@@ -51,10 +85,11 @@
 .recent-reports,
 .evacuees-table,
 .grouped-barangays {
-	background: #fff;
-	border-radius: 10px;
-	padding: 16px;
-	box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 6px 12px rgba(16,24,40,0.06);
+	background: #ffffff;
+	border-radius: 12px;
+	padding: 0;
+	overflow: hidden;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 	margin-bottom: 16px;
 }
 
@@ -84,8 +119,9 @@
 .report-controls {
 	display: flex;
 	align-items: center;
-	gap: 12px;
-	margin-bottom: 14px;
+	gap: 16px;
+	padding: 0 0 24px;
+	flex-wrap: wrap;
 }
 
 .report-controls select,
@@ -101,6 +137,24 @@
 	cursor: pointer;
 }
 
+.report-controls input[type="search"],
+.report-controls input[type="date"],
+.report-controls select {
+	box-sizing: border-box;
+	height: 42px;
+	border: 1px solid #cbd5e1;
+	border-radius: 8px;
+	padding: 10px 12px;
+	background: #ffffff;
+	color: #0f172a;
+	font-size: 14px;
+}
+
+.report-controls input[type="search"] {
+	flex: 1;
+	min-width: 250px;
+}
+
 .evacuees-table table {
 	width: 100%;
 	border-collapse: collapse;
@@ -109,8 +163,77 @@
 .evacuees-table th,
 .evacuees-table td {
 	text-align: left;
+	padding: 14px 16px;
+	border-bottom: 1px solid #e2e8f0;
+	font-size: 14px;
+	color: #1e293b;
+}
+
+.evacuees-table thead {
+	background: #f1f5f9;
+	border-bottom: 2px solid #cbd5e1;
+}
+
+.evacuees-table th {
+	font-size: 13px;
+	font-weight: 600;
+	color: #334155;
+	letter-spacing: 0.5px;
+}
+
+.evacuees-table tbody tr:hover {
+	background: #f8fafc;
+}
+
+.report-status-badge {
+	display: inline-block;
+	border-radius: 20px;
+	padding: 6px 12px;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.report-status-active {
+	background: #bbf7d0;
+	color: #065f46;
+}
+
+.report-status-checked-out {
+	background: #fed7aa;
+	color: #92400e;
+}
+
+.report-actions {
+	display: flex;
+	gap: 8px;
+	white-space: nowrap;
+}
+
+.report-action-button {
+	border: none;
+	border-radius: 6px;
 	padding: 8px 10px;
-	border-bottom: 1px solid #f3f4f6;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	cursor: pointer;
+}
+
+.report-action-inactive {
+	background: #fed7aa;
+	color: #92400e;
+}
+
+.report-action-delete {
+	background: #fecaca;
+	color: #991b1b;
+}
+
+.report-action-button:disabled {
+	cursor: not-allowed;
+	opacity: 0.6;
 }
 
 .grouped-barangays .barangay-group {
@@ -171,5 +294,20 @@
 @media (max-width: 600px) {
 	.metric-row { grid-template-columns: 1fr; }
 	.report-controls { flex-direction: column; align-items: stretch; }
+}
+
+@media print {
+	@page { margin: 16mm; }
+	.reports-page { padding: 0; color: #000; }
+	.reports-header, .report-controls, .report-actions-heading, .report-actions { display: none; }
+	.report-print-heading { display: block; margin-bottom: 18px; }
+	.report-print-heading h1, .report-print-heading h2 { margin: 0 0 6px; }
+	.report-print-heading p { margin: 0; }
+	.metric-row { grid-template-columns: repeat(3, 1fr); margin-bottom: 12px; }
+	.metric, .evacuees-table { box-shadow: none; border: 1px solid #d1d5db; }
+	.evacuees-table { padding: 0; overflow: visible; }
+	.report-table-wrap { overflow: visible; }
+	.evacuees-table table { font-size: 10px; }
+	.evacuees-table th, .evacuees-table td { padding: 6px; }
 }
 

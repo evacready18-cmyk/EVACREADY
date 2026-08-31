@@ -15,7 +15,7 @@ const section = React.createElement
 
 function Home({ navigate, onLogout, role = 'admin' }) {
   const [now, setNow] = React.useState(new Date())
-  const roleLabel = role === 'user' ? 'Users' : role.charAt(0).toUpperCase() + role.slice(1)
+  const roleLabel = role === 'user' ? 'Resident' : role.charAt(0).toUpperCase() + role.slice(1)
 
   React.useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000)

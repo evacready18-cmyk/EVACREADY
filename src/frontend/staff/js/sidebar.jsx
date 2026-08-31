@@ -5,7 +5,7 @@ const staffLinks = [
   { text: 'User Management', page: 'staff-usermanagement' },
   { text: 'Alert & Notification', page: 'staff-alert' },
   { text: 'Evacuation Center', page: 'staff-evacuation-center' },
-  { text: 'Report and Analytics', page: 'staff-report' },
+  { text: 'Reports', page: 'staff-report' },
   { text: 'Settings', page: 'staff-settings' },
 ]
 

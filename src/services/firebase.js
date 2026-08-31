@@ -20,7 +20,10 @@ import {
   updateDoc,
   deleteDoc,
   onSnapshot,
+  query,
+  runTransaction,
   serverTimestamp,
+  where,
 } from "firebase/firestore";
 
 // Your web app's Firebase configuration
@@ -54,6 +57,7 @@ export async function syncUserProfile(user, extraData = {}, firestoreInstance = 
     role: extraData.role || "user",
     barangay: extraData.barangay || "",
     phone: extraData.phone || "",
+    status: extraData.status || (userSnapshot.exists() ? userSnapshot.data().status || "Inactive" : "Inactive"),
     provider: extraData.provider || "email",
     updatedAt: serverTimestamp(),
     ...(userSnapshot.exists() ? {} : { createdAt: serverTimestamp() }),
@@ -75,12 +79,12 @@ export async function registerWithEmailPassword({ email, password, name, role = 
 export async function createStaffAccount({ email, password, name, barangay = "" }) {
   const secondaryApp = initializeApp(firebaseConfig, `Secondary-${Date.now()}`)
   const secondaryAuth = getAuth(secondaryApp)
-  const secondaryDb = getFirestore(secondaryApp)
   try {
     const credential = await createUserWithEmailAndPassword(secondaryAuth, email, password)
     await updateProfile(credential.user, { displayName: name })
-    // Written via the secondary auth session (the new user) so it satisfies own-document security rules.
-    await syncUserProfile(credential.user, { name, role: "staff", barangay, provider: "email" }, secondaryDb)
+    // The primary session remains the authenticated admin, which authorizes creation
+    // of the staff profile without allowing residents to assign themselves this role.
+    await syncUserProfile(credential.user, { name, role: "staff", barangay, provider: "email" })
     return credential.user
   } finally {
     await signOut(secondaryAuth)
@@ -95,6 +99,15 @@ export async function signInWithEmailPassword(email, password) {
 
 export async function signOutUser() {
   await signOut(auth)
+}
+
+export async function setCurrentStaffStatus(status) {
+  const user = auth.currentUser
+  if (!user) return
+  const profile = await getUserProfile(user.uid)
+  if (profile?.role === "staff") {
+    await updateDoc(doc(db, "users", user.uid), { status, updatedAt: serverTimestamp() })
+  }
 }
 
 export async function signInWithGoogle() {
@@ -135,6 +148,253 @@ export async function createUserProfile(userData) {
   });
 
   return docRef;
+}
+
+export async function createEvacuationCenter({ name, barangay, location, coords = "", capacity, imageUrl = "" }) {
+  const centerCapacity = Number(capacity)
+  if (!Number.isInteger(centerCapacity) || centerCapacity < 1) {
+    throw new Error("Capacity must be a whole number greater than zero.")
+  }
+
+  return addDoc(collection(db, "evacuationCenters"), {
+    name: name.trim(),
+    barangay: barangay.trim(),
+    location: location.trim(),
+    coords: coords.trim(),
+    capacity: centerCapacity,
+    availableSlots: centerCapacity,
+    lastCheckInResidentUid: "",
+    imageUrl: imageUrl.trim(),
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export function subscribeToEvacuationCenters(callback) {
+  return onSnapshot(collection(db, "evacuationCenters"), (snapshot) => {
+    callback(snapshot.docs.map((centerDoc) => ({ id: centerDoc.id, ...centerDoc.data() })))
+  }, (error) => {
+    console.error("Error subscribing to evacuation centers:", error)
+    callback([])
+  })
+}
+
+export async function deleteEvacuationCenter(centerId) {
+  await deleteDoc(doc(db, "evacuationCenters", centerId))
+}
+
+export async function checkIntoEvacuationCenter(centerId, residentUid) {
+  const centerRef = doc(db, "evacuationCenters", centerId)
+  const checkInRef = doc(db, "evacuationCenters", centerId, "checkIns", residentUid)
+  const residentRef = doc(db, "users", residentUid)
+  const evacueeRef = doc(db, "evacuees", residentUid)
+  const historyRef = doc(collection(db, "evacueeHistory"))
+
+  const visit = await runTransaction(db, async (transaction) => {
+    const [centerSnapshot, checkInSnapshot, residentSnapshot] = await Promise.all([
+      transaction.get(centerRef),
+      transaction.get(checkInRef),
+      transaction.get(residentRef),
+    ])
+
+    if (!centerSnapshot.exists()) throw new Error("This evacuation center is no longer available.")
+    if (checkInSnapshot.exists()) throw new Error("You have already checked in at this evacuation center.")
+    if (!residentSnapshot.exists()) throw new Error("Your resident profile is unavailable.")
+
+    const availableSlots = Number(centerSnapshot.data().availableSlots)
+    if (!Number.isInteger(availableSlots) || availableSlots < 1) {
+      throw new Error("This evacuation center is full.")
+    }
+
+    transaction.set(checkInRef, {
+      residentUid,
+      residentName: residentSnapshot.data().name || "Resident",
+      phone: residentSnapshot.data().phone || "",
+      barangay: residentSnapshot.data().barangay || "",
+      barangayKey: normalizeBarangay(residentSnapshot.data().barangay),
+      centerName: centerSnapshot.data().name || "Evacuation Center",
+      historyId: historyRef.id,
+      checkedInAt: serverTimestamp(),
+    })
+    transaction.update(centerRef, {
+      availableSlots: availableSlots - 1,
+      lastCheckInResidentUid: residentUid,
+      updatedAt: serverTimestamp(),
+    })
+
+    return {
+      residentUid,
+      residentName: residentSnapshot.data().name || "Resident",
+      phone: residentSnapshot.data().phone || "",
+      barangay: residentSnapshot.data().barangay || "",
+      barangayKey: normalizeBarangay(residentSnapshot.data().barangay),
+      centerId,
+      centerName: centerSnapshot.data().name || "Evacuation Center",
+    }
+  })
+
+  await setDoc(evacueeRef, {
+    ...visit,
+    status: "Active",
+    checkedInAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
+  await setDoc(historyRef, {
+    ...visit,
+    status: "Active",
+    checkedInAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export async function activateResidentAtCenter(centerId, residentUid) {
+  const residentRef = doc(db, "users", residentUid)
+  const residentSnapshot = await getDoc(residentRef)
+  if (!residentSnapshot.exists() || residentSnapshot.data().role !== "user") {
+    throw new Error("This resident profile is unavailable.")
+  }
+
+  const previousStatus = residentSnapshot.data().status || "Inactive"
+  const previousCenterId = residentSnapshot.data().evacuationCenterId || ""
+  const selectedCenterCheckInRef = doc(db, "evacuationCenters", centerId, "checkIns", residentUid)
+  const selectedCenterCheckIn = await getDoc(selectedCenterCheckInRef)
+  if (selectedCenterCheckIn.exists()) {
+    await updateDoc(residentRef, { status: "Active", evacuationCenterId: centerId, updatedAt: serverTimestamp() })
+    return
+  }
+
+  const existingCheckInRef = previousCenterId
+    ? doc(db, "evacuationCenters", previousCenterId, "checkIns", residentUid)
+    : null
+  const existingCheckIn = existingCheckInRef ? await getDoc(existingCheckInRef) : null
+
+  if (existingCheckIn?.exists()) {
+    await updateDoc(residentRef, { status: "Active", updatedAt: serverTimestamp() })
+    return
+  }
+
+  await updateDoc(residentRef, { status: "Active", evacuationCenterId: centerId, updatedAt: serverTimestamp() })
+  try {
+    await checkIntoEvacuationCenter(centerId, residentUid)
+  } catch (error) {
+    await updateDoc(residentRef, { status: previousStatus, evacuationCenterId: previousCenterId, updatedAt: serverTimestamp() })
+    throw error
+  }
+}
+
+export async function deactivateResidentFromCenter(residentUid) {
+  const residentRef = doc(db, "users", residentUid)
+  const residentSnapshot = await getDoc(residentRef)
+  if (!residentSnapshot.exists()) throw new Error("This resident profile is unavailable.")
+
+  const centerId = residentSnapshot.data().evacuationCenterId || ""
+  if (!centerId) {
+    const resident = residentSnapshot.data()
+    const checkoutRecord = {
+      residentUid,
+      residentName: resident.name || "Resident",
+      phone: resident.phone || "",
+      barangay: resident.barangay || "",
+      barangayKey: normalizeBarangay(resident.barangay),
+      centerId: "",
+      centerName: "Not recorded",
+      status: "Checked out",
+      checkedOutAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }
+    await setDoc(doc(db, "evacuees", residentUid), checkoutRecord, { merge: true })
+    await setDoc(doc(collection(db, "evacueeHistory")), checkoutRecord)
+    await updateDoc(residentRef, { status: "Inactive", updatedAt: serverTimestamp() })
+    return
+  }
+
+  const centerRef = doc(db, "evacuationCenters", centerId)
+  const checkInRef = doc(db, "evacuationCenters", centerId, "checkIns", residentUid)
+  const evacueeRef = doc(db, "evacuees", residentUid)
+  const activeCheckInSnapshot = await getDoc(checkInRef)
+  if (!activeCheckInSnapshot.exists()) {
+    await updateDoc(residentRef, { status: "Inactive", updatedAt: serverTimestamp() })
+    return
+  }
+
+  await updateDoc(residentRef, { status: "Inactive", updatedAt: serverTimestamp() })
+  const checkout = await runTransaction(db, async (transaction) => {
+    const [centerSnapshot, checkInSnapshot] = await Promise.all([
+      transaction.get(centerRef),
+      transaction.get(checkInRef),
+    ])
+    if (!centerSnapshot.exists() || !checkInSnapshot.exists()) {
+      throw new Error("The resident's active evacuation-center assignment was not found.")
+    }
+
+    const capacity = Number(centerSnapshot.data().capacity)
+    const availableSlots = Number(centerSnapshot.data().availableSlots)
+    if (!Number.isInteger(capacity) || !Number.isInteger(availableSlots) || availableSlots >= capacity) {
+      throw new Error("The evacuation center availability cannot be restored.")
+    }
+
+    transaction.delete(checkInRef)
+    transaction.update(centerRef, {
+      availableSlots: availableSlots + 1,
+      lastCheckInResidentUid: residentUid,
+      updatedAt: serverTimestamp(),
+    })
+
+    return {
+      residentUid,
+      residentName: checkInSnapshot.data().residentName || "Resident",
+      phone: checkInSnapshot.data().phone || "",
+      barangay: checkInSnapshot.data().barangay || "",
+      barangayKey: checkInSnapshot.data().barangayKey || normalizeBarangay(checkInSnapshot.data().barangay),
+      centerId,
+      centerName: checkInSnapshot.data().centerName || "Evacuation Center",
+      historyId: checkInSnapshot.data().historyId || "",
+    }
+  })
+
+  const checkoutRecord = {
+    ...checkout,
+    status: "Checked out",
+    checkedOutAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  }
+  await setDoc(evacueeRef, checkoutRecord, { merge: true })
+  if (checkout.historyId) {
+    await updateDoc(doc(db, "evacueeHistory", checkout.historyId), checkoutRecord)
+  } else {
+    await setDoc(doc(collection(db, "evacueeHistory")), checkoutRecord)
+  }
+}
+
+export function subscribeToActiveEvacuees({ barangay = "" } = {}, callback) {
+  const normalizedBarangay = normalizeBarangay(barangay)
+  const evacuees = collection(db, "evacuees")
+  const checkInQuery = normalizedBarangay
+    ? query(evacuees, where("barangay", "==", barangay))
+    : evacuees
+
+  return onSnapshot(checkInQuery, (snapshot) => {
+    callback(snapshot.docs.map((evacueeDoc) => ({ id: evacueeDoc.id, ...evacueeDoc.data() })))
+  }, (error) => {
+    console.error("Error subscribing to active evacuees:", error)
+    callback([])
+  })
+}
+
+export function subscribeToEvacueeHistory({ barangay = "" } = {}, callback) {
+  const records = collection(db, "evacueeHistory")
+  const historyQuery = barangay ? query(records, where("barangay", "==", barangay)) : records
+
+  return onSnapshot(historyQuery, (snapshot) => {
+    callback(snapshot.docs.map((record) => ({ id: record.id, ...record.data() })))
+  }, (error) => {
+    console.error("Error subscribing to evacuee history:", error)
+    callback([])
+  })
+}
+
+export async function deleteEvacueeHistory(historyId) {
+  await deleteDoc(doc(db, "evacueeHistory", historyId))
 }
 
 // Normalizes barangay names so common abbreviations (e.g. "Brgy 5") match their

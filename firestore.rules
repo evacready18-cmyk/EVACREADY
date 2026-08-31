@@ -1,7 +1,21 @@
 rules_version = '2';
 
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+// Collection: evacuationCenters
+// Fields: name, barangay, location, coords, capacity, availableSlots,
+// imageUrl, createdAt, updatedAt. Center managers create/delete centers.
+// Collection: evacuationCenters/{centerId}/checkIns
+// Fields: residentUid, checkedInAt. A resident creates one check-in as part
+// of the transaction that decreases the parent center's availableSlots.
+// ===============================================================
+
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
     function callerExists() {
       return exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
@@ -9,7 +23,88 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
     function isAdmin() {
-      return request.auth != null && callerExists() && callerProfile().role == 'admin';
+      return isAuthenticated() && callerExists() && callerProfile().role == 'admin';
+    }
+    function isCenterManager() {
+      return isAuthenticated() && callerExists() &&
+        (callerProfile().role == 'admin' || callerProfile().role == 'staff');
+    }
+    function isStaffForBarangay(barangay) {
+      return isAuthenticated() && callerExists() && callerProfile().role == 'staff' &&
+        callerProfile().barangay.lower().trim() == barangay.lower().trim();
+    }
+    function isResident() {
+      return isAuthenticated() && callerExists() && callerProfile().role == 'user';
+    }
+    function isValidUser(data) {
+      return data.keys().hasOnly(['uid', 'email', 'name', 'role', 'barangay', 'phone', 'status', 'evacuationCenterId', 'provider', 'verified', 'createdAt', 'updatedAt']) &&
+        data.keys().hasAll(['uid', 'email', 'name', 'role', 'barangay', 'phone', 'provider', 'createdAt', 'updatedAt']) &&
+        data.uid is string && data.uid.size() > 0 && data.uid.size() <= 128 &&
+        data.email is string && data.email.size() > 0 && data.email.size() <= 254 &&
+        data.name is string && data.name.size() <= 120 &&
+        data.role in ['user', 'staff', 'admin'] &&
+        data.barangay is string && data.barangay.size() <= 80 &&
+        data.phone is string && data.phone.size() <= 30 &&
+        (!('status' in data) || (data.status is string && data.status in ['Active', 'Inactive'])) &&
+        (!('evacuationCenterId' in data) || (data.evacuationCenterId is string && data.evacuationCenterId.size() <= 128)) &&
+        data.provider is string && data.provider.size() > 0 && data.provider.size() <= 30 &&
+        (!('verified' in data) || data.verified is bool) &&
+        data.createdAt is timestamp && data.updatedAt is timestamp;
+    }
+    function isValidCenter(data) {
+      return data.keys().hasOnly(['name', 'barangay', 'location', 'coords', 'capacity', 'availableSlots', 'lastCheckInResidentUid', 'imageUrl', 'createdAt', 'updatedAt']) &&
+        data.keys().hasAll(['name', 'barangay', 'location', 'coords', 'capacity', 'availableSlots', 'lastCheckInResidentUid', 'imageUrl', 'createdAt', 'updatedAt']) &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 120 &&
+        data.barangay is string && data.barangay.size() > 0 && data.barangay.size() <= 80 &&
+        data.location is string && data.location.size() > 0 && data.location.size() <= 240 &&
+        data.coords is string && data.coords.size() <= 100 &&
+        data.imageUrl is string && data.imageUrl.size() <= 2048 &&
+        data.capacity is int && data.capacity > 0 && data.capacity <= 100000 &&
+        data.availableSlots is int && data.availableSlots >= 0 && data.availableSlots <= data.capacity &&
+        data.lastCheckInResidentUid is string && data.lastCheckInResidentUid.size() <= 128 &&
+        data.createdAt is timestamp && data.updatedAt is timestamp;
+    }
+    function isValidCheckIn(centerId, data) {
+      return data.keys().hasOnly(['residentUid', 'residentName', 'phone', 'barangay', 'barangayKey', 'centerName', 'historyId', 'checkedInAt']) &&
+        data.keys().hasAll(['residentUid', 'residentName', 'phone', 'barangay', 'barangayKey', 'centerName', 'historyId', 'checkedInAt']) &&
+        data.residentName is string && data.residentName.size() <= 120 &&
+        data.phone is string && data.phone.size() <= 30 &&
+        data.barangay is string && data.barangay.size() > 0 && data.barangay.size() <= 80 &&
+        data.barangayKey is string && data.barangayKey.size() > 0 && data.barangayKey.size() <= 80 &&
+        data.centerName is string && data.centerName.size() > 0 && data.centerName.size() <= 120 &&
+        data.historyId is string && data.historyId.size() > 0 && data.historyId.size() <= 128 &&
+        data.residentName == get(/databases/$(database)/documents/users/$(data.residentUid)).data.name &&
+        data.phone == get(/databases/$(database)/documents/users/$(data.residentUid)).data.phone &&
+        data.barangay == get(/databases/$(database)/documents/users/$(data.residentUid)).data.barangay &&
+        data.centerName == get(/databases/$(database)/documents/evacuationCenters/$(centerId)).data.name &&
+        get(/databases/$(database)/documents/users/$(data.residentUid)).data.role == 'user' &&
+        getAfter(/databases/$(database)/documents/users/$(data.residentUid)).data.status == 'Active' &&
+        data.checkedInAt is timestamp;
+    }
+    function isResidentCheckInUpdate(centerId) {
+      return isResident() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['availableSlots', 'lastCheckInResidentUid', 'updatedAt']) &&
+        request.resource.data.availableSlots == resource.data.availableSlots - 1 &&
+        request.resource.data.availableSlots >= 0 &&
+        request.resource.data.lastCheckInResidentUid == request.auth.uid &&
+        request.resource.data.updatedAt is timestamp &&
+        getAfter(/databases/$(database)/documents/evacuationCenters/$(centerId)/checkIns/$(request.resource.data.lastCheckInResidentUid)).data.residentUid == request.auth.uid;
+    }
+    function isStaffCheckInUpdate() {
+      return isCenterManager() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['availableSlots', 'lastCheckInResidentUid', 'updatedAt']) &&
+        request.resource.data.availableSlots == resource.data.availableSlots - 1 &&
+        request.resource.data.availableSlots >= 0 &&
+        request.resource.data.lastCheckInResidentUid is string && request.resource.data.lastCheckInResidentUid.size() <= 128 &&
+        request.resource.data.updatedAt is timestamp;
+    }
+    function isStaffCheckOutUpdate(centerId) {
+      return isCenterManager() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['availableSlots', 'lastCheckInResidentUid', 'updatedAt']) &&
+        request.resource.data.availableSlots == resource.data.availableSlots + 1 &&
+        request.resource.data.availableSlots <= resource.data.capacity &&
+        request.resource.data.lastCheckInResidentUid is string && request.resource.data.lastCheckInResidentUid.size() <= 128 &&
+        request.resource.data.updatedAt is timestamp;
     }
     // Staff may only manage resident ("user") accounts in their own barangay,
     // and may not touch role/barangay/email/uid (prevents privilege escalation).
@@ -18,7 +113,42 @@ service cloud.firestore {
         callerProfile().role == 'staff' &&
         resource.data.role == 'user' &&
         callerProfile().barangay.lower().trim() == resource.data.barangay.lower().trim() &&
+        isValidUser(request.resource.data) &&
         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'barangay', 'email', 'uid']);
+    }
+    function isStaffStatusUpdate() {
+      return isAuthenticated() && callerExists() && callerProfile().role == 'staff' &&
+        resource.data.role == 'user' &&
+        callerProfile().barangay.lower().trim() == resource.data.barangay.lower().trim() &&
+        request.resource.data.status is string && request.resource.data.status in ['Active', 'Inactive'] &&
+        request.resource.data.role == resource.data.role &&
+        request.resource.data.email == resource.data.email &&
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.barangay == resource.data.barangay;
+    }
+    function isStaffEvacuationStatusUpdate() {
+      return isAuthenticated() && callerExists() && callerProfile().role == 'staff' &&
+        resource.data.role == 'user' &&
+        callerProfile().barangay.lower().trim() == resource.data.barangay.lower().trim() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'evacuationCenterId', 'updatedAt']) &&
+        request.resource.data.status is string && request.resource.data.status in ['Active', 'Inactive'] &&
+        request.resource.data.evacuationCenterId is string && request.resource.data.evacuationCenterId.size() <= 128 &&
+        request.resource.data.updatedAt is timestamp;
+    }
+    function isOwnProfileUpdate(userId) {
+      return isAuthenticated() && request.auth.uid == userId &&
+        isValidUser(request.resource.data) &&
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.email == resource.data.email &&
+        request.resource.data.role == resource.data.role &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status']);
+    }
+    function isStaffSelfStatusUpdate(userId) {
+      return isAuthenticated() && request.auth.uid == userId && resource.data.role == 'staff' &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']) &&
+        request.resource.data.status is string && request.resource.data.status in ['Active', 'Inactive'] &&
+        request.resource.data.updatedAt is timestamp;
     }
     function isStaffOwnerDelete() {
       return request.auth != null && callerExists() &&
@@ -32,9 +162,51 @@ service cloud.firestore {
     // manage any profile; staff may manage residents within their own barangay.
     match /users/{userId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin() || isStaffOwnerUpdate());
+      allow create: if isValidUser(request.resource.data) &&
+        ((isAuthenticated() && request.auth.uid == userId && request.resource.data.role == 'user') || isAdmin());
+      allow update: if isAdmin() || isOwnProfileUpdate(userId) || isStaffSelfStatusUpdate(userId) || isStaffOwnerUpdate() || isStaffStatusUpdate() || isStaffEvacuationStatusUpdate();
       allow delete: if request.auth != null && (request.auth.uid == userId || isAdmin() || isStaffOwnerDelete());
+    }
+
+    match /evacuationCenters/{centerId} {
+      allow read: if isAuthenticated();
+      allow create: if isCenterManager() && isValidCenter(request.resource.data);
+      allow update: if isResidentCheckInUpdate(centerId) || isStaffCheckInUpdate() || isStaffCheckOutUpdate(centerId);
+      allow delete: if isCenterManager();
+
+      match /checkIns/{residentUid} {
+        // Staff need a single-document read to verify whether a resident already
+        // has a check-in before an activation transaction creates that document.
+        allow get: if isAuthenticated() && (request.auth.uid == residentUid || isCenterManager());
+        allow list: if isAuthenticated() && (request.auth.uid == residentUid || isAdmin() || isStaffForBarangay(resource.data.barangay));
+        allow create: if ((isResident() && request.auth.uid == residentUid) || isStaffForBarangay(request.resource.data.barangay)) &&
+          !exists(/databases/$(database)/documents/evacuationCenters/$(centerId)/checkIns/$(residentUid)) &&
+          isValidCheckIn(centerId, request.resource.data) &&
+          get(/databases/$(database)/documents/evacuationCenters/$(centerId)).data.availableSlots > 0 &&
+          getAfter(/databases/$(database)/documents/evacuationCenters/$(centerId)).data.availableSlots ==
+            get(/databases/$(database)/documents/evacuationCenters/$(centerId)).data.availableSlots - 1;
+        allow delete: if isCenterManager();
+      }
+    }
+
+    // Persistent check-in and check-out history. Admins can see all records;
+    // staff can access records only for their own barangay.
+    match /evacuees/{residentUid} {
+      allow get: if isAuthenticated() &&
+        (request.auth.uid == residentUid || isAdmin() || isStaffForBarangay(resource.data.barangay));
+      allow list: if isAuthenticated() && (isAdmin() || isStaffForBarangay(resource.data.barangay));
+      allow create: if isAdmin() || isStaffForBarangay(request.resource.data.barangay);
+      allow update: if isAdmin() || isStaffForBarangay(resource.data.barangay);
+    }
+
+    // One document for each evacuation visit, retained after checkout for reports.
+    match /evacueeHistory/{historyId} {
+      allow get: if isAuthenticated() &&
+        (request.auth.uid == resource.data.residentUid || isAdmin() || isStaffForBarangay(resource.data.barangay));
+      allow list: if isAuthenticated() && (isAdmin() || isStaffForBarangay(resource.data.barangay));
+      allow create: if isAdmin() || isStaffForBarangay(request.resource.data.barangay);
+      allow update: if isAdmin() || isStaffForBarangay(resource.data.barangay);
+      allow delete: if isAdmin() || isStaffForBarangay(resource.data.barangay);
     }
   }
 }

@@ -12,7 +12,7 @@ function UserSidebar({ current, navigate, onLogout }) {
   return (
     <aside className="user-sidebar">
       <div className="user-sidebar__brand">EVACREADY</div>
-      <nav className="user-sidebar__nav" aria-label="User navigation">
+      <nav className="user-sidebar__nav" aria-label="Resident navigation">
         {userLinks.map((link) => (
           <a
             className={`user-sidebar__link${current === link.page ? ' active' : ''}`}
