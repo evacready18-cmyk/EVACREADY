@@ -1,0 +1,40 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function callerExists() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    function callerProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function isAdmin() {
+      return request.auth != null && callerExists() && callerProfile().role == 'admin';
+    }
+    // Staff may only manage resident ("user") accounts in their own barangay,
+    // and may not touch role/barangay/email/uid (prevents privilege escalation).
+    function isStaffOwnerUpdate() {
+      return request.auth != null && callerExists() &&
+        callerProfile().role == 'staff' &&
+        resource.data.role == 'user' &&
+        callerProfile().barangay.lower().trim() == resource.data.barangay.lower().trim() &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'barangay', 'email', 'uid']);
+    }
+    function isStaffOwnerDelete() {
+      return request.auth != null && callerExists() &&
+        callerProfile().role == 'staff' &&
+        resource.data.role == 'user' &&
+        callerProfile().barangay.lower().trim() == resource.data.barangay.lower().trim();
+    }
+
+    // Any signed-in user can read the users collection (needed for admin/staff
+    // account listings). Users may always manage their own profile; admins may
+    // manage any profile; staff may manage residents within their own barangay.
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin() || isStaffOwnerUpdate());
+      allow delete: if request.auth != null && (request.auth.uid == userId || isAdmin() || isStaffOwnerDelete());
+    }
+  }
+}

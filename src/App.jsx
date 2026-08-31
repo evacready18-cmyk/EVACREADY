@@ -10,7 +10,7 @@ import EvacuationCenterPage from './frontend/admin/js/evacuationcenter.js'
 import ReportPage from './frontend/admin/js/report.js'
 import SettingsPage from './frontend/admin/js/settings.js'
 import UserManagementPage from './frontend/admin/js/usermanagement.js'
-import { registerWithEmailPassword, signInWithEmailPassword, signOutUser, onAuthStateChanged, signInWithGoogle } from './services/firebase.js'
+import { registerWithEmailPassword, signInWithEmailPassword, signOutUser, onAuthStateChanged, signInWithGoogle, getUserProfile, subscribeToUserProfile, syncUserProfile } from './services/firebase.js'
 import StaffSidebar from './frontend/staff/js/sidebar.jsx'
 import StaffSection from './frontend/staff/js/section.jsx'
 import UserSidebar from './frontend/user/js/sidebar.jsx'
@@ -19,27 +19,69 @@ import UserSection from './frontend/user/js/section.jsx'
 function App() {
   const [page, setPage] = useState('login')
   const [isInitializing, setIsInitializing] = useState(true)
+  const [staffBarangay, setStaffBarangay] = useState('')
+  const [currentUid, setCurrentUid] = useState('')
+
+  // Keeps staffBarangay in sync with Firestore in real time, so an admin correcting
+  // a staff member's barangay takes effect immediately without a re-login.
+  useEffect(() => {
+    if (!currentUid) return undefined
+    const unsubscribe = subscribeToUserProfile(currentUid, (profile) => {
+      if (profile && profile.role === 'staff') {
+        setStaffBarangay(profile.barangay || '')
+      }
+    })
+    return unsubscribe
+  }, [currentUid])
+
+  // Resolves role/barangay from the Firestore profile (authoritative, cross-device),
+  // falling back to the localStorage values used for legacy/manually-created accounts.
+  // Ensures a profile doc always exists so security rules can identify admins.
+  const resolveRoleAndBarangay = async (uid, email) => {
+    const emailKey = `evacready-role:${email.trim().toLowerCase()}`
+    let role = window.localStorage.getItem(emailKey) || 'admin'
+    let barangay = window.localStorage.getItem(`${emailKey}-barangay`) || ''
+    try {
+      const profile = await getUserProfile(uid)
+      if (profile) {
+        role = profile.role || role
+        barangay = profile.barangay || barangay
+      } else {
+        await syncUserProfile({ uid, email, displayName: '' }, { role, barangay, provider: 'email' })
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error)
+    }
+    return { role, barangay }
+  }
 
   useEffect(() => {
     // Check if user is already logged in on app mount
     const unsubscribe = onAuthStateChanged((user) => {
       if (user) {
         // User is logged in, restore their session
-        const role = window.localStorage.getItem(`evacready-role:${user.email.trim().toLowerCase()}`) || 'admin'
-        setPage(role === 'staff' ? 'staff-evacuees' : role === 'user' ? 'user-information' : `${role}-dashboard`)
+        setCurrentUid(user.uid)
+        resolveRoleAndBarangay(user.uid, user.email).then(({ role, barangay }) => {
+          if (role === 'staff') setStaffBarangay(barangay)
+          setPage(role === 'staff' ? 'staff-evacuees' : role === 'user' ? 'user-information' : `${role}-dashboard`)
+          setIsInitializing(false)
+        })
       } else {
         // User is not logged in
+        setCurrentUid('')
         setPage('login')
+        setIsInitializing(false)
       }
-      setIsInitializing(false)
     })
     return unsubscribe
   }, [])
 
   const handleLogin = async ({ email, password }) => {
     try {
-      await signInWithEmailPassword(email, password)
-      const role = window.localStorage.getItem(`evacready-role:${email.trim().toLowerCase()}`) || 'admin'
+      const user = await signInWithEmailPassword(email, password)
+      setCurrentUid(user.uid)
+      const { role, barangay } = await resolveRoleAndBarangay(user.uid, email)
+      if (role === 'staff') setStaffBarangay(barangay)
       setPage(role === 'staff' ? 'staff-evacuees' : role === 'user' ? 'user-information' : `${role}-dashboard`)
     } catch (error) {
       alert(error.message)
@@ -60,8 +102,9 @@ function App() {
     try {
       const user = await signInWithGoogle()
       const email = user.email.trim().toLowerCase()
-      // Check if user has a role stored, default to 'user' for Google login
-      const role = window.localStorage.getItem(`evacready-role:${email}`) || 'user'
+      setCurrentUid(user.uid)
+      const { role, barangay } = await resolveRoleAndBarangay(user.uid, email)
+      if (role === 'staff') setStaffBarangay(barangay)
       setPage(role === 'staff' ? 'staff-evacuees' : role === 'user' ? 'user-information' : `${role}-dashboard`)
     } catch (error) {
       if (error.code === 'auth/popup-closed-by-user') {
@@ -91,9 +134,10 @@ function App() {
       return <RegisterForm onSubmit={handleRegister} onBack={() => setPage('login')} onGoogleAccount={handleGoogleLogin} />
     }
     if (page === 'admin-dashboard' || page === 'home' || page === 'dashboard') return <Home navigate={setPage} onLogout={handleLogout} />
-    if (page === 'usermanagement') return <UserManagementPage />
+    if (page === 'usermanagement') return <UserManagementPage allowedRole="Staff" />
     if (page.startsWith('user-')) return <UserSection page={page} />
     if (page === 'staff-evacuees') return <EvacManagePage />
+    if (page === 'staff-usermanagement') return <UserManagementPage allowedRole="User" barangay={staffBarangay} />
     if (page === 'staff-alert') return <AlertPage />
     if (page === 'staff-evacuation-center') return <EvacuationCenterPage />
     if (page === 'staff-report') return <ReportPage />

@@ -1,18 +1,38 @@
 import React from 'react'
 import '../css/usermanagement.css'
-import { USER_ACCOUNTS } from '../../data/userAccounts.js'
-import { registerWithEmailPassword } from '../../../services/firebase.js'
+import { BARANGAYS } from '../../data/barangays.js'
+import { createStaffAccount, subscribeToUsers, updateUserProfileFields, deleteUserProfile } from '../../../services/firebase.js'
 
 const section = React.createElement
 
-function UserManagementPage() {
-  const [users, setUsers] = React.useState(USER_ACCOUNTS)
+function formatJoinDate(user) {
+  if (user.createdAt && typeof user.createdAt.toDate === 'function') {
+    return user.createdAt.toDate().toISOString().split('T')[0]
+  }
+  return ''
+}
+
+function normalizeUser(raw) {
+  return {
+    id: raw.uid,
+    name: raw.name || '',
+    email: raw.email || '',
+    role: raw.role ? raw.role.charAt(0).toUpperCase() + raw.role.slice(1) : 'User',
+    status: raw.status || 'Active',
+    joinDate: formatJoinDate(raw),
+    barangay: raw.barangay || '',
+    verified: Boolean(raw.verified),
+  }
+}
+
+function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
+  const [users, setUsers] = React.useState([])
   const [searchQuery, setSearchQuery] = React.useState('')
-  const [roleFilter, setRoleFilter] = React.useState('All')
   const [statusFilter, setStatusFilter] = React.useState('All')
   const [selectedUser, setSelectedUser] = React.useState(null)
   const [actionType, setActionType] = React.useState(null)
   const [newName, setNewName] = React.useState('')
+  const [newBarangay, setNewBarangay] = React.useState('')
   const [showCreateStaff, setShowCreateStaff] = React.useState(false)
   const [staffForm, setStaffForm] = React.useState({
     name: '',
@@ -20,6 +40,13 @@ function UserManagementPage() {
     password: '',
     barangay: '',
   })
+
+  React.useEffect(() => {
+    const unsubscribe = subscribeToUsers({ role: allowedRole, barangay }, (rawUsers) => {
+      setUsers(rawUsers.map(normalizeUser))
+    })
+    return unsubscribe
+  }, [allowedRole, barangay])
 
   const filteredUsers = React.useMemo(() => {
     let result = users
@@ -33,55 +60,73 @@ function UserManagementPage() {
       )
     }
     
-    // Role filter
-    if (roleFilter !== 'All') {
-      result = result.filter(user => user.role === roleFilter)
-    }
-    
     // Status filter
     if (statusFilter !== 'All') {
       result = result.filter(user => user.status === statusFilter)
     }
     
     return result
-  }, [users, searchQuery, roleFilter, statusFilter])
+  }, [users, searchQuery, statusFilter])
 
   const handleAction = (user, action) => {
     setSelectedUser(user)
     setActionType(action)
     setNewName(user.name)
+    setNewBarangay(user.barangay)
   }
 
   const handleCloseModal = () => {
     setSelectedUser(null)
     setActionType(null)
     setNewName('')
+    setNewBarangay('')
   }
 
-  const handleVerifyUser = (userId) => {
-    setUsers(users.map(user => 
-      user.id === userId 
-        ? { ...user, verified: true }
-        : user
-    ))
+  const handleVerifyUser = async (userId) => {
+    try {
+      await updateUserProfileFields(userId, { verified: true })
+    } catch (error) {
+      console.error('Error verifying user:', error)
+      alert(`Error verifying user: ${error.message}`)
+    }
     handleCloseModal()
   }
 
-  const handleChangeName = (userId) => {
+  const handleChangeName = async (userId) => {
     if (!newName.trim()) {
       alert('Please enter a name')
       return
     }
-    setUsers(users.map(user => 
-      user.id === userId 
-        ? { ...user, name: newName }
-        : user
-    ))
+    try {
+      await updateUserProfileFields(userId, { name: newName })
+    } catch (error) {
+      console.error('Error changing name:', error)
+      alert(`Error changing name: ${error.message}`)
+    }
     handleCloseModal()
   }
 
-  const handleDeleteUser = (userId) => {
-    setUsers(users.filter(user => user.id !== userId))
+  const handleDeleteUser = async (userId) => {
+    try {
+      await deleteUserProfile(userId)
+    } catch (error) {
+      console.error('Error deleting user:', error)
+      alert(`Error deleting user: ${error.message}`)
+    }
+    handleCloseModal()
+  }
+
+  const handleChangeBarangay = async (userId) => {
+    if (!newBarangay.trim()) {
+      alert('Please select a barangay')
+      return
+    }
+    try {
+      await updateUserProfileFields(userId, { barangay: newBarangay })
+    } catch (error) {
+      console.error('Error changing barangay:', error)
+      alert(`Error changing barangay: ${error.message}`)
+    }
     handleCloseModal()
   }
 
@@ -97,11 +142,12 @@ function UserManagementPage() {
     }
 
     try {
-      // Register staff in Firebase
-      const firebaseUser = await registerWithEmailPassword({
+      // Register staff in Firebase without disturbing the admin's own session
+      const firebaseUser = await createStaffAccount({
         email: staffForm.email,
         password: staffForm.password,
         name: staffForm.name,
+        barangay: staffForm.barangay,
       })
 
       // Store staff role and barangay in localStorage
@@ -109,25 +155,15 @@ function UserManagementPage() {
       window.localStorage.setItem(emailKey, 'staff')
       window.localStorage.setItem(`${emailKey}-barangay`, staffForm.barangay)
 
-      const newStaff = {
-        id: Math.max(...users.map(u => u.id), 0) + 1,
-        name: staffForm.name,
-        email: staffForm.email,
-        password: staffForm.password,
-        role: 'Staff',
-        status: 'Active',
-        joinDate: new Date().toISOString().split('T')[0],
-        barangay: staffForm.barangay,
-        verified: true,
-      }
-
-      setUsers([...users, newStaff])
       setShowCreateStaff(false)
       setStaffForm({ name: '', email: '', password: '', barangay: '' })
-      alert(`Staff account created successfully!\n\nEmail: ${newStaff.email}\nPassword: ${newStaff.password}\n\nThe account is now available in Firebase and can be used to log in to the system.`)
+      alert(`Staff account created successfully!\n\nEmail: ${firebaseUser.email}\nPassword: ${staffForm.password}\n\nThe account is now available in Firebase and can be used to log in to the system.`)
     } catch (error) {
       console.error('Error creating staff account:', error)
-      alert(`Error creating staff account: ${error.message}`)
+      const message = error.code === 'auth/email-already-in-use'
+        ? 'An account with this email already exists. Please use a different email address.'
+        : error.message
+      alert(`Error creating staff account: ${message}`)
     }
   }
 
@@ -146,9 +182,9 @@ function UserManagementPage() {
         'div',
         null,
         section('h2', null, 'User Management'),
-        section('p', null, 'Manage user roles, access, and accounts'),
+        section('p', null, allowedRole === 'Staff' ? 'Manage staff roles, access, and accounts' : 'Manage user roles, access, and accounts'),
       ),
-      section('button', {
+      allowedRole === 'Staff' && section('button', {
         className: 'btn-create-staff',
         onClick: () => setShowCreateStaff(true),
       }, '+ Create Staff Account'),
@@ -170,17 +206,6 @@ function UserManagementPage() {
       section(
         'div',
         { className: 'filter-group' },
-        section(
-          'select',
-          {
-            value: roleFilter,
-            onChange: (e) => setRoleFilter(e.target.value),
-          },
-          section('option', null, 'All Roles'),
-          section('option', null, 'Admin'),
-          section('option', null, 'Staff'),
-          section('option', null, 'User'),
-        ),
         section(
           'select',
           {
@@ -246,6 +271,10 @@ function UserManagementPage() {
                     className: 'btn-action btn-location',
                     onClick: () => handleAction(user, 'viewBarangay'),
                   }, 'View Barangay'),
+                  allowedRole === 'Staff' && section('button', {
+                    className: 'btn-action btn-edit',
+                    onClick: () => handleAction(user, 'changeBarangay'),
+                  }, 'Change Barangay'),
                   section('button', {
                     className: 'btn-action btn-delete',
                     onClick: () => handleAction(user, 'delete'),
@@ -256,7 +285,7 @@ function UserManagementPage() {
           ) : section(
             'tr',
             null,
-            section('td', { colSpan: 6, className: 'no-data' }, 'No users found')
+            section('td', { colSpan: 6, className: 'no-data' }, allowedRole === 'Staff' ? 'No staff found' : `No users found${barangay ? ` in ${barangay}` : ''}`)
           )
         ),
       ),
@@ -316,6 +345,30 @@ function UserManagementPage() {
             'div',
             { className: 'modal-actions' },
             section('button', { className: 'btn-close', onClick: handleCloseModal }, 'Close'),
+          ),
+        ),
+        actionType === 'changeBarangay' && section(
+          React.Fragment,
+          null,
+          section('h3', null, 'Change Barangay'),
+          section('div', { className: 'modal-body' },
+            section('p', null, 'Select the correct barangay:'),
+            section(
+              'select',
+              {
+                value: newBarangay,
+                onChange: (e) => setNewBarangay(e.target.value),
+                className: 'modal-input',
+              },
+              section('option', { value: '' }, 'Select barangay'),
+              BARANGAYS.map((b) => section('option', { key: b, value: b }, b)),
+            ),
+          ),
+          section(
+            'div',
+            { className: 'modal-actions' },
+            section('button', { className: 'btn-cancel', onClick: handleCloseModal }, 'Cancel'),
+            section('button', { className: 'btn-confirm', onClick: () => handleChangeBarangay(selectedUser.id) }, 'Save'),
           ),
         ),
         actionType === 'delete' && section(
@@ -384,13 +437,16 @@ function UserManagementPage() {
             'div',
             { className: 'form-group' },
             section('label', null, 'Barangay *'),
-            section('input', {
-              type: 'text',
-              value: staffForm.barangay,
-              onChange: (e) => setStaffForm({ ...staffForm, barangay: e.target.value }),
-              placeholder: 'Enter barangay',
-              className: 'modal-input',
-            }),
+            section(
+              'select',
+              {
+                value: staffForm.barangay,
+                onChange: (e) => setStaffForm({ ...staffForm, barangay: e.target.value }),
+                className: 'modal-input',
+              },
+              section('option', { value: '' }, 'Select barangay'),
+              BARANGAYS.map((b) => section('option', { key: b, value: b }, b)),
+            ),
           ),
         ),
         section(

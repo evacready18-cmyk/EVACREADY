@@ -2,6 +2,7 @@ import '../css/sidebar.css'
 
 const staffLinks = [
   { text: 'Evacuees', page: 'staff-evacuees' },
+  { text: 'User Management', page: 'staff-usermanagement' },
   { text: 'Alert & Notification', page: 'staff-alert' },
   { text: 'Evacuation Center', page: 'staff-evacuation-center' },
   { text: 'Report and Analytics', page: 'staff-report' },
