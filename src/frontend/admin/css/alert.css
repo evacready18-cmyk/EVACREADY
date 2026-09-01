@@ -50,21 +50,6 @@
 
 .alert-form {
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 20px;
-  min-height: 100%;
-}
-
-.alert-form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: auto;
-}
-
-.alert-form {
-  display: grid;
   gap: 20px;
 }
 
