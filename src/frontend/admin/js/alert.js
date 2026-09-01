@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 import '../css/alert.css'
+import { createAnnouncement, dismissCurrentUserAnnouncement, subscribeToAnnouncements, subscribeToDismissedAnnouncements } from '../../../services/firebase.js'
 
 const section = React.createElement
 
-const AlertPage = () => {
+const AlertPage = ({ audienceFilter = null }) => {
   const [alertType, setAlertType] = useState('Information')
   const [audience, setAudience] = useState('all')
   const [priority, setPriority] = useState('medium')
@@ -14,14 +15,18 @@ const AlertPage = () => {
   const [filterDate, setFilterDate] = useState('All Dates')
   const [searchQuery, setSearchQuery] = useState('')
 
-  const notifications = [
-    { id: 1, type: 'Information', date: '2026-05-24', title: 'Weather Update', message: 'Light rain expected later today.' },
-    { id: 2, type: 'Warning', date: '2026-05-23', title: 'Flood Advisory', message: 'River levels are rising in low-lying areas.' },
-    { id: 3, type: 'Evacuation', date: '2026-05-22', title: 'Shelter Alert', message: 'Evacuation center 3 is now open for displaced families.' },
-    { id: 4, type: 'Advisory', date: '2026-05-20', title: 'Health Advisory', message: 'Boil water before drinking due to possible contamination.' },
-  ]
+  const [notifications, setNotifications] = useState([])
+  const [dismissedNotificationIds, setDismissedNotificationIds] = useState([])
+
+  React.useEffect(() => subscribeToAnnouncements(setNotifications, audienceFilter), [audienceFilter])
+  React.useEffect(() => subscribeToDismissedAnnouncements(setDismissedNotificationIds), [])
+
+  const formatDate = (createdAt) => createdAt?.toDate
+    ? createdAt.toDate().toISOString().split('T')[0]
+    : 'Sending...'
 
   const filteredNotifications = notifications
+    .filter((notification) => !dismissedNotificationIds.includes(notification.id))
     .filter((notification) =>
       filterType === 'All Types' ? true : notification.type === filterType,
     )
@@ -29,9 +34,9 @@ const AlertPage = () => {
       filterDate === 'All Dates'
         ? true
         : filterDate === 'Today'
-        ? notification.date === '2026-05-24'
+        ? notification.createdAt?.toDate && notification.createdAt.toDate().toDateString() === new Date().toDateString()
         : filterDate === 'This Week'
-        ? notification.date >= '2026-05-18'
+        ? notification.createdAt?.toDate && notification.createdAt.toDate() >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
         : true,
     )
     .filter((notification) =>
@@ -39,16 +44,29 @@ const AlertPage = () => {
       notification.message.toLowerCase().includes(searchQuery.toLowerCase()),
     )
 
-  const handleSubmit = (event) => {
+  const handleDismissNotification = async (notificationId) => {
+    try {
+      await dismissCurrentUserAnnouncement(notificationId)
+    } catch (error) {
+      setStatus({ type: 'error', text: error.message || 'Unable to delete notification.' })
+    }
+  }
+
+  const handleSubmit = async (event) => {
     event.preventDefault()
     if (!title.trim() || !message.trim()) {
       setStatus({ type: 'error', text: 'Please enter both a title and a message.' })
       return
     }
 
-    setStatus({ type: 'success', text: 'Alert sent successfully!' })
-    setTitle('')
-    setMessage('')
+    try {
+      await createAnnouncement({ type: alertType, audience, priority, title, message })
+      setStatus({ type: 'success', text: 'Alert sent successfully!' })
+      setTitle('')
+      setMessage('')
+    } catch (error) {
+      setStatus({ type: 'error', text: error.message || 'Unable to send alert.' })
+    }
   }
 
   const handleCancel = (event) => {
@@ -240,7 +258,13 @@ const AlertPage = () => {
                     'div',
                     { className: 'notification-item__header' },
                     section('strong', null, notification.title),
-                    section('span', { className: 'notification-item__meta' }, `${notification.type} • ${notification.date}`),
+                    section('button', {
+                      className: 'notification-item__delete',
+                      type: 'button',
+                      onClick: () => handleDismissNotification(notification.id),
+                      'aria-label': `Delete ${notification.title} notification`,
+                    }, 'Delete'),
+                    section('span', { className: 'notification-item__meta' }, `${notification.type} • ${formatDate(notification.createdAt)}`),
                   ),
                   section('p', { className: 'notification-item__message' }, notification.message),
                 ),

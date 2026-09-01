@@ -10,6 +10,10 @@ rules_version = '2';
 // Fields: residentUid, checkedInAt. A resident creates one check-in as part
 // of the transaction that decreases the parent center's availableSlots.
 // ===============================================================
+// Collection: announcements
+// Fields: type, audience, priority, title, message, authorUid, createdAt.
+// Center managers publish immutable emergency notifications for signed-in users.
+// ===============================================================
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -36,8 +40,11 @@ service cloud.firestore {
     function isResident() {
       return isAuthenticated() && callerExists() && callerProfile().role == 'user';
     }
+    function isStaff() {
+      return isAuthenticated() && callerExists() && callerProfile().role == 'staff';
+    }
     function isValidUser(data) {
-      return data.keys().hasOnly(['uid', 'email', 'name', 'role', 'barangay', 'phone', 'status', 'evacuationCenterId', 'provider', 'verified', 'createdAt', 'updatedAt']) &&
+      return data.keys().hasOnly(['uid', 'email', 'name', 'role', 'barangay', 'phone', 'status', 'evacuationCenterId', 'provider', 'verified', 'lastNotificationReadAt', 'createdAt', 'updatedAt']) &&
         data.keys().hasAll(['uid', 'email', 'name', 'role', 'barangay', 'phone', 'provider', 'createdAt', 'updatedAt']) &&
         data.uid is string && data.uid.size() > 0 && data.uid.size() <= 128 &&
         data.email is string && data.email.size() > 0 && data.email.size() <= 254 &&
@@ -49,6 +56,7 @@ service cloud.firestore {
         (!('evacuationCenterId' in data) || (data.evacuationCenterId is string && data.evacuationCenterId.size() <= 128)) &&
         data.provider is string && data.provider.size() > 0 && data.provider.size() <= 30 &&
         (!('verified' in data) || data.verified is bool) &&
+        (!('lastNotificationReadAt' in data) || data.lastNotificationReadAt is timestamp) &&
         data.createdAt is timestamp && data.updatedAt is timestamp;
     }
     function isValidCenter(data) {
@@ -63,6 +71,17 @@ service cloud.firestore {
         data.availableSlots is int && data.availableSlots >= 0 && data.availableSlots <= data.capacity &&
         data.lastCheckInResidentUid is string && data.lastCheckInResidentUid.size() <= 128 &&
         data.createdAt is timestamp && data.updatedAt is timestamp;
+    }
+    function isValidAnnouncement(data) {
+      return data.keys().hasOnly(['type', 'audience', 'priority', 'title', 'message', 'authorUid', 'createdAt']) &&
+        data.keys().hasAll(['type', 'audience', 'priority', 'title', 'message', 'authorUid', 'createdAt']) &&
+        data.type in ['Information', 'Warning', 'Evacuation', 'Advisory'] &&
+        data.audience in ['all', 'evacuees', 'staff'] &&
+        data.priority in ['low', 'medium', 'high'] &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 120 &&
+        data.message is string && data.message.size() > 0 && data.message.size() <= 2000 &&
+        data.authorUid == request.auth.uid &&
+        data.createdAt is timestamp && data.createdAt == request.time;
     }
     function isValidCheckIn(centerId, data) {
       return data.keys().hasOnly(['residentUid', 'residentName', 'phone', 'barangay', 'barangayKey', 'centerName', 'historyId', 'checkedInAt']) &&
@@ -142,7 +161,7 @@ service cloud.firestore {
         request.resource.data.email == resource.data.email &&
         request.resource.data.role == resource.data.role &&
         request.resource.data.createdAt == resource.data.createdAt &&
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status']);
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'verified']);
     }
     function isStaffSelfStatusUpdate(userId) {
       return isAuthenticated() && request.auth.uid == userId && resource.data.role == 'staff' &&
@@ -166,6 +185,24 @@ service cloud.firestore {
         ((isAuthenticated() && request.auth.uid == userId && request.resource.data.role == 'user') || isAdmin());
       allow update: if isAdmin() || isOwnProfileUpdate(userId) || isStaffSelfStatusUpdate(userId) || isStaffOwnerUpdate() || isStaffStatusUpdate() || isStaffEvacuationStatusUpdate();
       allow delete: if request.auth != null && (request.auth.uid == userId || isAdmin() || isStaffOwnerDelete());
+
+      match /notificationDismissals/{announcementId} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+        allow create: if isAuthenticated() && request.auth.uid == userId &&
+          request.resource.data.keys().hasOnly(['createdAt']) &&
+          request.resource.data.keys().hasAll(['createdAt']) &&
+          request.resource.data.createdAt is timestamp &&
+          request.resource.data.createdAt == request.time;
+        allow delete: if isAuthenticated() && request.auth.uid == userId;
+      }
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if isAdmin() ||
+        (isStaff() && resource.data.audience in ['staff', 'evacuees', 'all']) ||
+        (isResident() && resource.data.audience == 'all') ||
+        (isResident() && resource.data.audience == 'evacuees');
+      allow create: if isCenterManager() && isValidAnnouncement(request.resource.data);
     }
 
     match /evacuationCenters/{centerId} {

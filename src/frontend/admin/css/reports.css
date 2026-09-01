@@ -298,13 +298,19 @@
 
 @media print {
 	@page { margin: 16mm; }
-	.reports-page { padding: 0; color: #000; }
-	.reports-header, .report-controls, .report-actions-heading, .report-actions { display: none; }
-	.report-print-heading { display: block; margin-bottom: 18px; }
-	.report-print-heading h1, .report-print-heading h2 { margin: 0 0 6px; }
-	.report-print-heading p { margin: 0; }
-	.metric-row { grid-template-columns: repeat(3, 1fr); margin-bottom: 12px; }
-	.metric, .evacuees-table { box-shadow: none; border: 1px solid #d1d5db; }
+	body * { visibility: hidden !important; }
+	.reports-page,
+	.reports-page .evacuees-table,
+	.reports-page .evacuees-table * { visibility: visible !important; }
+	.app-shell > aside,
+	.user-sidebar,
+	.staff-sidebar { display: none !important; }
+	.main-content { margin: 0 !important; padding: 0 !important; background: #ffffff !important; }
+	.reports-page { position: absolute; top: 0; left: 0; width: 100%; padding: 0; color: #000; background: #ffffff; }
+	.reports-page > * { display: none; }
+	.reports-page > .evacuees-table { display: block; }
+	.report-controls, .report-actions-heading, .report-actions { display: none !important; }
+	.evacuees-table { box-shadow: none; border: 1px solid #d1d5db; }
 	.evacuees-table { padding: 0; overflow: visible; }
 	.report-table-wrap { overflow: visible; }
 	.evacuees-table table { font-size: 10px; }

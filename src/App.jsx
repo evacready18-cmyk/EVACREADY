@@ -8,7 +8,7 @@ import AlertPage from './frontend/admin/js/alert.js'
 import EvacManagePage from './frontend/admin/js/evacmanage.jsx'
 import EvacuationCenterPage from './frontend/admin/js/evacuationcenter.jsx'
 import ReportPage from './frontend/admin/js/report.jsx'
-import SettingsPage from './frontend/admin/js/settings.js'
+import SettingsPage from './frontend/admin/js/settings.jsx'
 import UserManagementPage from './frontend/admin/js/usermanagement.js'
 import { registerWithEmailPassword, signInWithEmailPassword, signOutUser, onAuthStateChanged, signInWithGoogle, getUserProfile, setCurrentStaffStatus, subscribeToUserProfile } from './services/firebase.js'
 import StaffSidebar from './frontend/staff/js/sidebar.jsx'
@@ -21,6 +21,15 @@ function App() {
   const [isInitializing, setIsInitializing] = useState(true)
   const [staffBarangay, setStaffBarangay] = useState('')
   const [currentUid, setCurrentUid] = useState('')
+
+  useEffect(() => {
+    try {
+      const savedSettings = JSON.parse(window.localStorage.getItem('evacready-settings') || '{}')
+      document.documentElement.classList.toggle('evacready-dark-mode', Boolean(savedSettings.darkMode))
+    } catch {
+      document.documentElement.classList.remove('evacready-dark-mode')
+    }
+  }, [])
 
   // Keeps staffBarangay in sync with Firestore in real time, so an admin correcting
   // a staff member's barangay takes effect immediately without a re-login.
@@ -149,7 +158,7 @@ function App() {
     if (page.startsWith('user-')) return <UserSection page={page} currentUid={currentUid} />
     if (page === 'staff-evacuees') return <EvacManagePage barangay={staffBarangay} />
     if (page === 'staff-usermanagement') return <UserManagementPage allowedRole="User" barangay={staffBarangay} />
-    if (page === 'staff-alert') return <AlertPage />
+    if (page === 'staff-alert') return <AlertPage audienceFilter={['staff', 'evacuees', 'all']} />
     if (page === 'staff-evacuation-center') return <EvacuationCenterPage />
     if (page === 'staff-report') return <ReportPage barangay={staffBarangay} />
     if (page === 'staff-settings') return <SettingsPage />
@@ -208,7 +217,7 @@ function App() {
       {isStaff ? (
         <StaffSidebar current={page} navigate={setPage} onLogout={handleLogout} />
       ) : isUser ? (
-        <UserSidebar current={page} navigate={setPage} onLogout={handleLogout} />
+        <UserSidebar current={page} currentUid={currentUid} navigate={setPage} onLogout={handleLogout} />
       ) : (
         <Sidebar current={page} navigate={setPage} onLogout={handleLogout} />
       )}

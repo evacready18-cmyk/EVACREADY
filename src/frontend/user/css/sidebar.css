@@ -37,6 +37,44 @@
   transition: background 0.2s ease, color 0.2s ease;
 }
 
+.user-sidebar__link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.user-sidebar__notification-count {
+  position: absolute;
+  top: -7px;
+  right: -9px;
+  display: grid;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  place-items: center;
+  border-radius: 999px;
+  box-sizing: border-box;
+  border: 2px solid #2563eb;
+  color: #ffffff;
+  background: #dc2626;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.user-sidebar__notification-bell {
+  position: relative;
+  display: grid;
+  flex: 0 0 19px;
+  place-items: center;
+  color: #ffffff;
+}
+
+.user-sidebar__menu-icon {
+  flex: 0 0 19px;
+  color: #ffffff;
+}
+
 .user-sidebar__link:hover,
 .user-sidebar__link.active {
   color: #ffffff;

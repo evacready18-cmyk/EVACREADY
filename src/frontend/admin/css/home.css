@@ -238,12 +238,17 @@
 
 .alert-item {
   display: flex;
+  width: 100%;
+  border: 1px solid transparent;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
   border-radius: 16px;
   background: #eceff2;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 .alert-item--high {
@@ -272,6 +277,14 @@
   color: #475569;
 }
 
+.recent-alerts-empty {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  color: #64748b;
+  background: #f8fafc;
+}
+
 .quick-actions {
   display: flex;
   gap: 10px;
@@ -290,6 +303,7 @@
   min-height: 100px;
   border-radius: 22px;
   border: 1px solid rgba(15, 23, 42, 0.08);
+  color: #000000;
   background: #fffbeb;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -336,8 +350,14 @@
   border-radius: 16px;
   background: #ecfccb;
   color: #166534;
+  text-decoration: none;
   font-weight: 600;
   font-size: 14px;
+}
+
+.hotline-item:hover {
+  color: #ffffff;
+  background: #15803d;
 }
 
 @media (max-width: 1200px) {

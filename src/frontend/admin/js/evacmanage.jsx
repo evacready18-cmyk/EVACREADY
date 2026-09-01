@@ -2,6 +2,7 @@ import React from 'react'
 import { Html5Qrcode } from 'html5-qrcode'
 import '../css/evacmanage.css'
 import { activateResidentAtCenter, getUserProfile, subscribeToActiveEvacuees, subscribeToEvacuationCenters } from '../../../services/firebase.js'
+import { BARANGAYS } from '../../data/barangays.js'
 
 function formatCheckInDate(timestamp) {
   if (timestamp && typeof timestamp.toDate === 'function') {
@@ -28,6 +29,7 @@ function EvacManagePage({ barangay = '' }) {
   const [centers, setCenters] = React.useState([])
   const [search, setSearch] = React.useState('')
   const [dateFilter, setDateFilter] = React.useState('')
+  const [barangayFilter, setBarangayFilter] = React.useState('')
   const [isScannerOpen, setIsScannerOpen] = React.useState(false)
   const [selectedCenterId, setSelectedCenterId] = React.useState('')
   const [manualCode, setManualCode] = React.useState('')
@@ -99,14 +101,15 @@ function EvacManagePage({ barangay = '' }) {
     const query = search.trim().toLowerCase()
     return evacuees.filter((evacuee) => {
       const matchesDate = !dateFilter || timestampDate(evacuee.checkedInAt) === dateFilter
+      const matchesBarangay = !barangayFilter || evacuee.barangay === barangayFilter
       const matchesSearch = !query ||
         evacuee.residentName.toLowerCase().includes(query) ||
         evacuee.barangay.toLowerCase().includes(query) ||
         evacuee.centerName.toLowerCase().includes(query) ||
         evacuee.phone.toLowerCase().includes(query)
-      return matchesDate && matchesSearch
+      return matchesDate && matchesBarangay && matchesSearch
     })
-  }, [evacuees, search, dateFilter])
+  }, [evacuees, search, dateFilter, barangayFilter])
 
   const heading = barangay ? `Evacuees - ${barangay}` : 'All Evacuees'
 
@@ -121,6 +124,10 @@ function EvacManagePage({ barangay = '' }) {
         <div className="evacmanage-search">
           <input type="search" placeholder="Search evacuees..." value={search} onChange={(event) => setSearch(event.target.value)} />
         </div>
+        {!barangay && <select className="evacmanage-barangay-filter" value={barangayFilter} onChange={(event) => setBarangayFilter(event.target.value)} aria-label="Filter evacuees by barangay">
+          <option value="">All barangays</option>
+          {BARANGAYS.map((barangayName) => <option key={barangayName} value={barangayName}>{barangayName}</option>)}
+        </select>}
         <input type="date" value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} aria-label="Filter evacuees by check-in date" />
       </div>
       <div className="evacuees-card">

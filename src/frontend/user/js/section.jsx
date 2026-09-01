@@ -1,16 +1,90 @@
-import React from 'react'
+import { useEffect, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
+import { dismissCurrentUserAnnouncement, markCurrentUserNotificationsRead, subscribeToAnnouncements, subscribeToDismissedAnnouncements, subscribeToUserProfile, updateCurrentUserProfile } from '../../../services/firebase'
+import { BARANGAYS } from '../../data/barangays'
+import '../css/section.css'
 
 const sectionTitles = {
-  'user-information': 'My Information',
+  'user-information': 'My Profile',
   'user-request': 'Request',
-  'user-announcement': 'Announcement',
+  'user-announcement': 'Alert Notification',
   'user-feedback': 'Feedback',
   'user-emergency-call': 'Emergency Call',
 }
 
 function UserSection({ page, currentUid }) {
-  const title = sectionTitles[page] || 'My Information'
+  const title = sectionTitles[page] || 'My Profile'
+  const [profile, setProfile] = useState(null)
+  const [form, setForm] = useState({ name: '', phone: '', barangay: '' })
+  const [isLoading, setIsLoading] = useState(page === 'user-information')
+  const [isSaving, setIsSaving] = useState(false)
+  const [message, setMessage] = useState('')
+  const [announcements, setAnnouncements] = useState([])
+  const [dismissedAnnouncementIds, setDismissedAnnouncementIds] = useState([])
+
+  useEffect(() => {
+    if (!currentUid) return undefined
+
+    setIsLoading(true)
+    const unsubscribe = subscribeToUserProfile(currentUid, (nextProfile) => {
+      setProfile(nextProfile)
+      setForm({
+        name: nextProfile?.name || '',
+        phone: nextProfile?.phone || '',
+        barangay: nextProfile?.barangay || '',
+      })
+      setIsLoading(false)
+    })
+    return unsubscribe
+  }, [page, currentUid])
+
+  useEffect(() => {
+    if (!currentUid) return undefined
+    return subscribeToDismissedAnnouncements(setDismissedAnnouncementIds)
+  }, [currentUid])
+
+  const handleDismissAnnouncement = async (announcementId) => {
+    try {
+      await dismissCurrentUserAnnouncement(announcementId)
+    } catch (error) {
+      console.error('Error deleting notification:', error)
+    }
+  }
+
+  useEffect(() => {
+    if (page !== 'user-announcement' || !currentUid) return undefined
+    markCurrentUserNotificationsRead().catch((error) => console.error('Error marking notifications as read:', error))
+    return subscribeToAnnouncements(setAnnouncements, ['all', 'evacuees'])
+  }, [page, currentUid])
+
+  const handleChange = (event) => {
+    const { name, value } = event.target
+    setForm((currentForm) => ({ ...currentForm, [name]: value }))
+    setMessage('')
+  }
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    if (!form.name.trim() || !form.phone.trim() || !form.barangay) {
+      setMessage('Complete your name, phone number, and barangay before saving.')
+      return
+    }
+
+    setIsSaving(true)
+    setMessage('')
+    try {
+      await updateCurrentUserProfile(form)
+      setMessage('Profile updated.')
+    } catch (error) {
+      setMessage(error.message || 'Unable to update your profile.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handlePrint = () => {
+    window.print()
+  }
 
   return (
     <section className="home-page">
@@ -20,16 +94,108 @@ function UserSection({ page, currentUid }) {
           <h1>{title}</h1>
         </div>
       </header>
-      <section className="panel" style={{ maxWidth: '720px', maxHeight: 'none' }}>
-        <h2>{title}</h2>
-        <p>This resident section is ready for its workflow and data.</p>
-      </section>
       {page === 'user-information' && (
-        <section className="panel" style={{ maxWidth: '720px', maxHeight: 'none' }}>
-          <h2>Resident QR Code</h2>
-          <p>Present this code to a staff member for evacuation-center check-in.</p>
-          {currentUid && <QRCodeSVG value={currentUid} size={180} level="M" includeMargin />}
-        </section>
+        <div className="resident-profile-layout">
+          <section className="resident-profile-panel">
+            <div className="resident-profile-panel__heading">
+              <div>
+                <p className="resident-profile-panel__eyebrow">Resident profile</p>
+                <h2>Your details</h2>
+              </div>
+              <div className="resident-profile-panel__badges">
+                <span className="resident-profile-panel__status">{profile?.status || 'Inactive'}</span>
+                <span className={`resident-profile-panel__verification${profile?.verified ? ' verified' : ''}`}>
+                  {profile?.verified ? 'Verified account' : 'Pending verification'}
+                </span>
+              </div>
+            </div>
+            {isLoading ? (
+              <p className="resident-profile-loading">Loading profile...</p>
+            ) : (
+              <form className="resident-profile-form" onSubmit={handleSubmit}>
+                <label>
+                  Full name
+                  <input name="name" value={form.name} onChange={handleChange} autoComplete="name" required />
+                </label>
+                <label>
+                  Email address
+                  <input value={profile?.email || ''} type="email" readOnly aria-readonly="true" />
+                </label>
+                <label>
+                  Phone number
+                  <input name="phone" value={form.phone} onChange={handleChange} type="tel" autoComplete="tel" required />
+                </label>
+                <label>
+                  Barangay
+                  <select name="barangay" value={form.barangay} onChange={handleChange} required>
+                    <option value="">Select barangay</option>
+                    {BARANGAYS.map((barangay) => <option key={barangay} value={barangay}>{barangay}</option>)}
+                  </select>
+                </label>
+                {message && <p className={`resident-profile-message${message === 'Profile updated.' ? ' success' : ''}`} role="status">{message}</p>}
+                <button type="submit" className="resident-profile-save" disabled={isSaving}>
+                  {isSaving ? 'Saving...' : 'Save changes'}
+                </button>
+              </form>
+            )}
+          </section>
+          <section className="resident-profile-qr">
+            <div className="resident-id-card">
+              <div className="resident-id-card__header">
+                <div>
+                  <p>EvacReady</p>
+                  <h2>Resident ID</h2>
+                </div>
+                <span className={`resident-id-card__verification${profile?.verified ? ' verified' : ''}`}>
+                  {profile?.verified ? 'Verified' : 'Pending'}
+                </span>
+              </div>
+              <p className="resident-id-card__name">{profile?.name || 'Resident'}</p>
+              <div className="resident-id-card__body">
+                <div className="resident-id-card__details">
+                  <p>{profile?.barangay || 'Barangay not recorded'}</p>
+                  <p>{profile?.phone || 'Phone not recorded'}</p>
+                </div>
+                <div className="resident-id-card__code">
+                  {currentUid && <QRCodeSVG value={currentUid} size={118} level="M" includeMargin />}
+                  <span>Scan for check-in</span>
+                </div>
+              </div>
+              <p className="resident-id-card__footer">Emergency resident identification</p>
+            </div>
+            <button type="button" className="resident-profile-print" onClick={handlePrint}>
+              Print resident ID
+            </button>
+          </section>
+        </div>
+      )}
+      {page !== 'user-information' && (
+        page === 'user-announcement' ? (
+          <section className="resident-announcements">
+            {announcements.filter((announcement) => !dismissedAnnouncementIds.includes(announcement.id)).length === 0 ? (
+              <p className="resident-announcements__empty">No alert notifications have been published yet.</p>
+            ) : announcements.filter((announcement) => !dismissedAnnouncementIds.includes(announcement.id)).map((announcement) => (
+              <article className={`resident-announcement resident-announcement--${announcement.priority || 'medium'}`} key={announcement.id}>
+                <div className="resident-announcement__heading">
+                  <div>
+                    <p>{announcement.type || 'Information'} · {announcement.audience === 'evacuees' ? 'Evacuees' : 'All residents'}</p>
+                    <h2>{announcement.title}</h2>
+                  </div>
+                  <div className="resident-announcement__actions">
+                    <time>{announcement.createdAt?.toDate ? announcement.createdAt.toDate().toLocaleDateString() : 'Sending...'}</time>
+                    <button type="button" onClick={() => handleDismissAnnouncement(announcement.id)}>Delete</button>
+                  </div>
+                </div>
+                <p className="resident-announcement__message">{announcement.message}</p>
+              </article>
+            ))}
+          </section>
+        ) : (
+          <section className="panel" style={{ maxWidth: '720px', maxHeight: 'none' }}>
+            <h2>{title}</h2>
+            <p>This resident section is ready for its workflow and data.</p>
+          </section>
+        )
       )}
     </section>
   )

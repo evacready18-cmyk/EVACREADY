@@ -20,6 +20,7 @@ import {
   updateDoc,
   deleteDoc,
   onSnapshot,
+  orderBy,
   query,
   runTransaction,
   serverTimestamp,
@@ -433,6 +434,29 @@ export async function updateUserProfileFields(uid, updates) {
   await updateDoc(doc(db, "users", uid), updates)
 }
 
+export async function updateCurrentUserProfile({ name, phone, barangay }) {
+  const user = auth.currentUser
+  if (!user) throw new Error("You must be signed in to update your profile.")
+
+  const profileUpdates = {
+    name: name.trim(),
+    phone: phone.trim(),
+    barangay: barangay.trim(),
+    updatedAt: serverTimestamp(),
+  }
+
+  await Promise.all([
+    updateDoc(doc(db, "users", user.uid), profileUpdates),
+    updateProfile(user, { displayName: profileUpdates.name }),
+  ])
+}
+
+export async function markCurrentUserNotificationsRead() {
+  const user = auth.currentUser
+  if (!user) return
+  await updateDoc(doc(db, "users", user.uid), { lastNotificationReadAt: serverTimestamp() })
+}
+
 export async function deleteUserProfile(uid) {
   await deleteDoc(doc(db, "users", uid))
 }
@@ -446,5 +470,64 @@ export async function getUserProfile(uid) {
 export function subscribeToUserProfile(uid, callback) {
   return onSnapshot(doc(db, "users", uid), (snapshot) => {
     callback(snapshot.exists() ? snapshot.data() : null)
+  })
+}
+
+export async function createAnnouncement({ type, audience, priority, title, message }) {
+  const user = auth.currentUser
+  if (!user) throw new Error("You must be signed in to send an announcement.")
+
+  const senderProfile = await getUserProfile(user.uid)
+  if (!senderProfile || !["staff", "admin"].includes(senderProfile.role)) {
+    throw new Error("This account is not configured as a staff or admin account in Firestore. Ask an administrator to create the staff account from User Management, then sign in with that account.")
+  }
+
+  return addDoc(collection(db, "announcements"), {
+    type,
+    audience,
+    priority,
+    title: title.trim(),
+    message: message.trim(),
+    authorUid: user.uid,
+    createdAt: serverTimestamp(),
+  })
+}
+
+export function subscribeToAnnouncements(callback, audiences = null) {
+  const announcementsQuery = audiences
+    ? query(collection(db, "announcements"), where("audience", audiences.length === 1 ? "==" : "in", audiences))
+    : query(collection(db, "announcements"), orderBy("createdAt", "desc"))
+
+  return onSnapshot(announcementsQuery, (snapshot) => {
+    const announcements = snapshot.docs
+      .map((announcementDoc) => ({ id: announcementDoc.id, ...announcementDoc.data() }))
+      .sort((first, second) => (second.createdAt?.toMillis?.() || 0) - (first.createdAt?.toMillis?.() || 0))
+    callback(announcements)
+  }, (error) => {
+    console.error("Error subscribing to announcements:", error)
+    callback([])
+  })
+}
+
+export function subscribeToDismissedAnnouncements(callback) {
+  const user = auth.currentUser
+  if (!user) {
+    callback([])
+    return () => {}
+  }
+
+  return onSnapshot(collection(db, "users", user.uid, "notificationDismissals"), (snapshot) => {
+    callback(snapshot.docs.map((dismissal) => dismissal.id))
+  }, (error) => {
+    console.error("Error subscribing to dismissed announcements:", error)
+    callback([])
+  })
+}
+
+export async function dismissCurrentUserAnnouncement(announcementId) {
+  const user = auth.currentUser
+  if (!user) throw new Error("You must be signed in to delete a notification.")
+  await setDoc(doc(db, "users", user.uid, "notificationDismissals", announcementId), {
+    createdAt: serverTimestamp(),
   })
 }

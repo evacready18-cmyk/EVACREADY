@@ -228,6 +228,24 @@
   font-size: 13px;
 }
 
+.notification-item__delete {
+  margin-left: auto;
+  padding: 4px 7px;
+  border: 0;
+  border-radius: 5px;
+  color: #b91c1c;
+  background: #fee2e2;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.notification-item__delete:hover {
+  color: #ffffff;
+  background: #b91c1c;
+}
+
 .notification-item__message {
   margin: 0;
   color: #334155;

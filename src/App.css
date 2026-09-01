@@ -3,6 +3,37 @@
   min-height: 100vh;
 }
 
+.evacready-dark-mode .main-content {
+  background: #111827;
+}
+
+.evacready-dark-mode .home-page,
+.evacready-dark-mode .settings-page {
+  color: #e2e8f0;
+  background: #111827;
+}
+
+.evacready-dark-mode .home-header h1,
+.evacready-dark-mode .settings-page__header h1,
+.evacready-dark-mode .settings-row__content h2 {
+  color: #f8fafc;
+}
+
+.evacready-dark-mode .settings-panel,
+.evacready-dark-mode .panel,
+.evacready-dark-mode .dashboard-card {
+  border-color: #334155;
+  background: #1e293b;
+}
+
+.evacready-dark-mode .settings-row {
+  border-color: #334155;
+}
+
+.evacready-dark-mode .settings-row__content p {
+  color: #cbd5e1;
+}
+
 .main-content {
   flex: 1;
   min-height: 100vh;

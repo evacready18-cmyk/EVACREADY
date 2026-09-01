@@ -41,6 +41,18 @@
   background: transparent;
 }
 
+.evacmanage-barangay-filter,
+.evacmanage-header > input[type="date"] {
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  color: #374151;
+  background: #ffffff;
+  font: inherit;
+  font-size: 14px;
+}
+
 .search-icon {
   font-size: 14px;
 }
