@@ -398,6 +398,19 @@ export async function deleteEvacueeHistory(historyId) {
   await deleteDoc(doc(db, "evacueeHistory", historyId))
 }
 
+export function subscribeToResidentEvacueeHistory(residentUid, callback) {
+  const historyQuery = query(collection(db, "evacueeHistory"), where("residentUid", "==", residentUid))
+
+  return onSnapshot(historyQuery, (snapshot) => {
+    const records = snapshot.docs.map((record) => ({ id: record.id, ...record.data() }))
+    records.sort((a, b) => (b.checkedInAt?.toMillis?.() || 0) - (a.checkedInAt?.toMillis?.() || 0))
+    callback(records)
+  }, (error) => {
+    console.error("Error subscribing to resident check-in history:", error)
+    callback([])
+  })
+}
+
 // Normalizes barangay names so common abbreviations (e.g. "Brgy 5") match their
 // full form (e.g. "Barangay 5").
 function normalizeBarangay(value) {

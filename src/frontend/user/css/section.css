@@ -337,6 +337,127 @@
   border-left: 1px solid #dbeafe;
 }
 
+.resident-history {
+  display: grid;
+  gap: 20px;
+  max-width: 960px;
+}
+
+.resident-history__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.resident-history__metric {
+  padding: 16px 20px;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(30, 64, 175, 0.06);
+}
+
+.resident-history__metric p {
+  margin: 0 0 6px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.resident-history__metric span {
+  color: #172554;
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.resident-history__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.resident-history__controls input,
+.resident-history__controls select {
+  box-sizing: border-box;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  color: #172554;
+  background: #ffffff;
+  font: inherit;
+}
+
+.resident-history__controls input[type="search"] {
+  min-width: 240px;
+  flex: 1;
+}
+
+.resident-history__table-wrap {
+  overflow-x: auto;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(30, 64, 175, 0.06);
+}
+
+.resident-history__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.resident-history__table th,
+.resident-history__table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #eef2ff;
+  color: #334155;
+  font-size: 14px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.resident-history__table th {
+  color: #2563eb;
+  background: #eff6ff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.resident-history__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.resident-history__status {
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: #166534;
+  background: #dcfce7;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.resident-history__status--checked-out {
+  color: #475569;
+  background: #e2e8f0;
+}
+
+@media (max-width: 640px) {
+  .resident-history__metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .resident-history__table th,
+  .resident-history__table td {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+}
+
 @media (max-width: 800px) {
   .resident-profile-layout {
     grid-template-columns: 1fr;

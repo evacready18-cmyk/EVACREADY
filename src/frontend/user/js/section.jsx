@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
-import { dismissCurrentUserAnnouncement, markCurrentUserNotificationsRead, subscribeToAnnouncements, subscribeToDismissedAnnouncements, subscribeToUserProfile, updateCurrentUserProfile } from '../../../services/firebase'
+import { dismissCurrentUserAnnouncement, markCurrentUserNotificationsRead, subscribeToAnnouncements, subscribeToDismissedAnnouncements, subscribeToResidentEvacueeHistory, subscribeToUserProfile, updateCurrentUserProfile } from '../../../services/firebase'
 import { BARANGAYS } from '../../data/barangays'
 import '../css/section.css'
 
@@ -8,8 +8,16 @@ const sectionTitles = {
   'user-information': 'My Profile',
   'user-request': 'Request',
   'user-announcement': 'Alert Notification',
-  'user-feedback': 'Feedback',
+  'user-history': 'Check-in History',
   'user-emergency-call': 'Emergency Call',
+}
+
+function formatHistoryDate(timestamp) {
+  return timestamp?.toDate ? timestamp.toDate().toLocaleString() : 'Pending...'
+}
+
+function historyDateKey(timestamp) {
+  return timestamp?.toDate ? timestamp.toDate().toISOString().slice(0, 10) : ''
 }
 
 function UserSection({ page, currentUid }) {
@@ -21,6 +29,10 @@ function UserSection({ page, currentUid }) {
   const [message, setMessage] = useState('')
   const [announcements, setAnnouncements] = useState([])
   const [dismissedAnnouncementIds, setDismissedAnnouncementIds] = useState([])
+  const [history, setHistory] = useState([])
+  const [historySearch, setHistorySearch] = useState('')
+  const [historyStatusFilter, setHistoryStatusFilter] = useState('All')
+  const [historyDateFilter, setHistoryDateFilter] = useState('')
 
   useEffect(() => {
     if (!currentUid) return undefined
@@ -56,6 +68,26 @@ function UserSection({ page, currentUid }) {
     markCurrentUserNotificationsRead().catch((error) => console.error('Error marking notifications as read:', error))
     return subscribeToAnnouncements(setAnnouncements, ['all', 'evacuees'])
   }, [page, currentUid])
+
+  useEffect(() => {
+    if (page !== 'user-history' || !currentUid) return undefined
+    return subscribeToResidentEvacueeHistory(currentUid, setHistory)
+  }, [page, currentUid])
+
+  const filteredHistory = useMemo(() => {
+    const query = historySearch.trim().toLowerCase()
+    return history.filter((record) => {
+      const matchesSearch = !query || (record.centerName || '').toLowerCase().includes(query)
+      const matchesStatus = historyStatusFilter === 'All' || record.status === historyStatusFilter
+      const matchesDate = !historyDateFilter ||
+        historyDateKey(record.checkedInAt) === historyDateFilter ||
+        historyDateKey(record.checkedOutAt) === historyDateFilter
+      return matchesSearch && matchesStatus && matchesDate
+    })
+  }, [history, historySearch, historyStatusFilter, historyDateFilter])
+
+  const activeHistoryCount = history.filter((record) => record.status === 'Active').length
+  const checkedOutHistoryCount = history.filter((record) => record.status === 'Checked out').length
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -189,6 +221,71 @@ function UserSection({ page, currentUid }) {
                 <p className="resident-announcement__message">{announcement.message}</p>
               </article>
             ))}
+          </section>
+        ) : page === 'user-history' ? (
+          <section className="resident-history">
+            <div className="resident-history__metrics">
+              <article className="resident-history__metric">
+                <p>Total visits</p>
+                <span>{history.length}</span>
+              </article>
+              <article className="resident-history__metric">
+                <p>Currently active</p>
+                <span>{activeHistoryCount}</span>
+              </article>
+              <article className="resident-history__metric">
+                <p>Checked out</p>
+                <span>{checkedOutHistoryCount}</span>
+              </article>
+            </div>
+            <div className="resident-history__controls">
+              <input
+                type="search"
+                placeholder="Search evacuation center"
+                value={historySearch}
+                onChange={(event) => setHistorySearch(event.target.value)}
+              />
+              <input
+                type="date"
+                value={historyDateFilter}
+                onChange={(event) => setHistoryDateFilter(event.target.value)}
+                aria-label="Filter by check-in or check-out date"
+              />
+              <select value={historyStatusFilter} onChange={(event) => setHistoryStatusFilter(event.target.value)}>
+                <option value="All">All transactions</option>
+                <option value="Active">Active check-ins</option>
+                <option value="Checked out">Checked out</option>
+              </select>
+            </div>
+            <div className="resident-history__table-wrap">
+              <table className="resident-history__table">
+                <thead>
+                  <tr>
+                    <th>EVACUATION CENTER</th>
+                    <th>CHECK-IN TIME</th>
+                    <th>CHECK-OUT TIME</th>
+                    <th>STATUS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredHistory.map((record) => (
+                    <tr key={record.id}>
+                      <td>{record.centerName || 'Evacuation Center'}</td>
+                      <td>{formatHistoryDate(record.checkedInAt)}</td>
+                      <td>{record.checkedOutAt ? formatHistoryDate(record.checkedOutAt) : 'Still checked in'}</td>
+                      <td>
+                        <span className={`resident-history__status resident-history__status--${(record.status || 'active').toLowerCase().replace(/\s+/g, '-')}`}>
+                          {record.status || 'Active'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {!filteredHistory.length && (
+                    <tr><td colSpan="4">No check-in or check-out records found.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </section>
         ) : (
           <section className="panel" style={{ maxWidth: '720px', maxHeight: 'none' }}>

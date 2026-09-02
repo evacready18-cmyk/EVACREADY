@@ -240,7 +240,8 @@ service cloud.firestore {
     match /evacueeHistory/{historyId} {
       allow get: if isAuthenticated() &&
         (request.auth.uid == resource.data.residentUid || isAdmin() || isStaffForBarangay(resource.data.barangay));
-      allow list: if isAuthenticated() && (isAdmin() || isStaffForBarangay(resource.data.barangay));
+      allow list: if isAuthenticated() &&
+        (request.auth.uid == resource.data.residentUid || isAdmin() || isStaffForBarangay(resource.data.barangay));
       allow create: if isAdmin() || isStaffForBarangay(request.resource.data.barangay);
       allow update: if isAdmin() || isStaffForBarangay(resource.data.barangay);
       allow delete: if isAdmin() || isStaffForBarangay(resource.data.barangay);

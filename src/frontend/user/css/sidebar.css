@@ -13,11 +13,30 @@
   box-shadow: 4px 0 30px rgba(15, 23, 42, 0.1);
 }
 
-.user-sidebar__brand {
+.user-sidebar__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
   margin-bottom: 36px;
+}
+
+.user-sidebar__brand {
   font-size: 28px;
   font-weight: 700;
   letter-spacing: 1px;
+}
+
+.user-sidebar__menu-toggle,
+.user-sidebar__profile-shortcut {
+  display: none;
+}
+
+.user-sidebar__panel {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
 }
 
 .user-sidebar__nav {
@@ -102,8 +121,11 @@
     padding: 26px 16px;
   }
 
-  .user-sidebar__brand {
+  .user-sidebar__topbar {
     margin-bottom: 26px;
+  }
+
+  .user-sidebar__brand {
     font-size: 23px;
   }
 
@@ -128,14 +150,46 @@
     padding: 16px;
   }
 
+  .user-sidebar__topbar {
+    justify-content: space-between;
+    margin-bottom: 0;
+  }
+
   .user-sidebar__brand {
-    margin-bottom: 14px;
     font-size: 21px;
   }
 
-  .user-sidebar__nav {
+  .user-sidebar__menu-toggle,
+  .user-sidebar__profile-shortcut {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border: 0;
+    border-radius: 10px;
+    color: #ffffff;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .user-sidebar__menu-toggle:hover,
+  .user-sidebar__profile-shortcut:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .user-sidebar__panel {
+    display: none;
+  }
+
+  .user-sidebar--open .user-sidebar__panel {
+    display: flex;
+    margin-top: 16px;
+  }
+
+  .user-sidebar__nav {
+    display: flex;
+    flex-direction: column;
     gap: 8px;
   }
 
