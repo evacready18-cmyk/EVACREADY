@@ -44,7 +44,7 @@ service cloud.firestore {
       return isAuthenticated() && callerExists() && callerProfile().role == 'staff';
     }
     function isValidUser(data) {
-      return data.keys().hasOnly(['uid', 'email', 'name', 'role', 'barangay', 'phone', 'status', 'evacuationCenterId', 'provider', 'verified', 'idPhotoUrl', 'lastNotificationReadAt', 'createdAt', 'updatedAt']) &&
+      return data.keys().hasOnly(['uid', 'email', 'name', 'role', 'barangay', 'phone', 'verificationId', 'status', 'evacuationCenterId', 'provider', 'verified', 'idPhotoUrl', 'lastNotificationReadAt', 'createdAt', 'updatedAt']) &&
         data.keys().hasAll(['uid', 'email', 'name', 'role', 'barangay', 'phone', 'provider', 'createdAt', 'updatedAt']) &&
         data.uid is string && data.uid.size() > 0 && data.uid.size() <= 128 &&
         data.email is string && data.email.size() > 0 && data.email.size() <= 254 &&
@@ -52,6 +52,7 @@ service cloud.firestore {
         data.role in ['user', 'staff', 'admin'] &&
         data.barangay is string && data.barangay.size() <= 80 &&
         data.phone is string && data.phone.size() <= 30 &&
+        (!('verificationId' in data) || (data.verificationId is string && data.verificationId.size() > 0 && data.verificationId.size() <= 100)) &&
         (!('status' in data) || (data.status is string && data.status in ['Active', 'Inactive'])) &&
         (!('evacuationCenterId' in data) || (data.evacuationCenterId is string && data.evacuationCenterId.size() <= 128)) &&
         data.provider is string && data.provider.size() > 0 && data.provider.size() <= 30 &&
@@ -183,7 +184,8 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if request.auth != null;
       allow create: if isValidUser(request.resource.data) &&
-        ((isAuthenticated() && request.auth.uid == userId && request.resource.data.role == 'user') || isAdmin());
+        ((isAuthenticated() && request.auth.uid == userId && request.resource.data.role == 'user' &&
+          'verificationId' in request.resource.data && request.resource.data.verificationId.size() > 0) || isAdmin());
       allow update: if isAdmin() || isOwnProfileUpdate(userId) || isStaffSelfStatusUpdate(userId) || isStaffOwnerUpdate() || isStaffStatusUpdate() || isStaffEvacuationStatusUpdate();
       allow delete: if request.auth != null && (request.auth.uid == userId || isAdmin() || isStaffOwnerDelete());
 

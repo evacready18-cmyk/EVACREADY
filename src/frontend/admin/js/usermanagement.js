@@ -21,6 +21,8 @@ function normalizeUser(raw) {
     status: raw.status || 'Active',
     joinDate: formatJoinDate(raw),
     barangay: raw.barangay || '',
+    verificationId: raw.verificationId || '',
+    idPhotoUrl: raw.idPhotoUrl || '',
     verified: Boolean(raw.verified),
   }
 }
@@ -274,6 +276,7 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
             section('th', null, 'Role'),
             section('th', null, 'Status'),
             section('th', null, 'Barangay'),
+            section('th', null, 'Verification ID'),
             section('th', null, 'Date Created'),
             section('th', null, 'Action'),
           ),
@@ -294,6 +297,7 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
                 section('span', { className: `status-badge status-${user.status.toLowerCase()}` }, user.status)
               ),
               section('td', null, user.barangay),
+              section('td', null, user.verificationId || 'Not provided'),
               section('td', null, user.joinDate || 'Not recorded'),
               section('td', null,
                 section(
@@ -330,7 +334,7 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
           ) : section(
             'tr',
             null,
-            section('td', { colSpan: 7, className: 'no-data' }, allowedRole === 'Staff' ? 'No staff found' : `No residents found${barangay ? ` in ${barangay}` : ''}`)
+            section('td', { colSpan: 8, className: 'no-data' }, allowedRole === 'Staff' ? 'No staff found' : `No residents found${barangay ? ` in ${barangay}` : ''}`)
           )
         ),
       ),
@@ -347,7 +351,13 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
           null,
           section('h3', null, 'Verify Account?'),
           section('div', { className: 'modal-body' },
-            section('p', null, `Are you sure you want to verify ${selectedUser.name}'s account?`),
+            section('p', null, `Review ${selectedUser.name}'s barangay ID before verifying this account.`),
+            section('p', null, section('strong', null, 'Verification ID: '), selectedUser.verificationId || 'Not provided'),
+            selectedUser.idPhotoUrl && section(
+              'a',
+              { href: selectedUser.idPhotoUrl, target: '_blank', rel: 'noopener noreferrer' },
+              section('img', { src: selectedUser.idPhotoUrl, alt: `${selectedUser.name}'s submitted ID`, className: 'verification-id-photo' }),
+            ),
           ),
           section(
             'div',

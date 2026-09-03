@@ -153,31 +153,40 @@ function UserSection({ page, currentUid }) {
             {isLoading ? (
               <p className="resident-profile-loading">Loading profile...</p>
             ) : (
-              <form className="resident-profile-form" onSubmit={handleSubmit}>
-                <label>
-                  Full name
-                  <input name="name" value={form.name} onChange={handleChange} autoComplete="name" required />
-                </label>
-                <label>
-                  Email address
-                  <input value={profile?.email || ''} type="email" readOnly aria-readonly="true" />
-                </label>
-                <label>
-                  Phone number
-                  <input name="phone" value={form.phone} onChange={handleChange} type="tel" autoComplete="tel" required />
-                </label>
-                <label>
-                  Barangay
-                  <select name="barangay" value={form.barangay} onChange={handleChange} required>
-                    <option value="">Select barangay</option>
-                    {BARANGAYS.map((barangay) => <option key={barangay} value={barangay}>{barangay}</option>)}
-                  </select>
-                </label>
-                {message && <p className={`resident-profile-message${message === 'Profile updated.' ? ' success' : ''}`} role="status">{message}</p>}
-                <button type="submit" className="resident-profile-save" disabled={isSaving}>
-                  {isSaving ? 'Saving...' : 'Save changes'}
-                </button>
-              </form>
+              <>
+                {profile && (
+                  <p className={`resident-profile-verification-notice${profile.verified ? ' verified' : ''}`} role="status">
+                    {profile.verified
+                      ? 'Your account has been verified. You can now access the full system.'
+                      : 'Your account is still being verified. Please wait for verification before using the full system.'}
+                  </p>
+                )}
+                <form className="resident-profile-form" onSubmit={handleSubmit}>
+                  <label>
+                    Full name
+                    <input name="name" value={form.name} onChange={handleChange} autoComplete="name" required />
+                  </label>
+                  <label>
+                    Email address
+                    <input value={profile?.email || ''} type="email" readOnly aria-readonly="true" />
+                  </label>
+                  <label>
+                    Phone number
+                    <input name="phone" value={form.phone} onChange={handleChange} type="tel" autoComplete="tel" required />
+                  </label>
+                  <label>
+                    Barangay
+                    <select name="barangay" value={form.barangay} onChange={handleChange} required>
+                      <option value="">Select barangay</option>
+                      {BARANGAYS.map((barangay) => <option key={barangay} value={barangay}>{barangay}</option>)}
+                    </select>
+                  </label>
+                  {message && <p className={`resident-profile-message${message === 'Profile updated.' ? ' success' : ''}`} role="status">{message}</p>}
+                  <button type="submit" className="resident-profile-save" disabled={isSaving}>
+                    {isSaving ? 'Saving...' : 'Save changes'}
+                  </button>
+                </form>
+              </>
             )}
           </section>
           <section className="resident-profile-qr">

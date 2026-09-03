@@ -10,7 +10,7 @@ const userLinks = [
   { text: 'Emergency Call', page: 'user-emergency-call', Icon: PhoneCall },
 ]
 
-function UserSidebar({ current, currentUid, navigate, onLogout }) {
+function UserSidebar({ current, currentUid, navigate, onLogout, isVerified }) {
   const [profile, setProfile] = useState(null)
   const [unreadCount, setUnreadCount] = useState(0)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -79,7 +79,7 @@ function UserSidebar({ current, currentUid, navigate, onLogout }) {
       </div>
       <div className="user-sidebar__panel">
         <nav className="user-sidebar__nav" aria-label="Resident navigation">
-          {userLinks.map((link) => (
+          {userLinks.filter((link) => isVerified || link.page === 'user-information').map((link) => (
             <a
               className={`user-sidebar__link${current === link.page ? ' active' : ''}`}
               href="#"

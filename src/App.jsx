@@ -21,6 +21,7 @@ function App() {
   const [isInitializing, setIsInitializing] = useState(true)
   const [staffBarangay, setStaffBarangay] = useState('')
   const [currentUid, setCurrentUid] = useState('')
+  const [isResidentVerified, setIsResidentVerified] = useState(false)
 
   useEffect(() => {
     try {
@@ -39,6 +40,11 @@ function App() {
       if (profile && profile.role === 'staff') {
         setStaffBarangay(profile.barangay || '')
       }
+      if (profile?.role === 'user') {
+        const verified = Boolean(profile.verified)
+        setIsResidentVerified(verified)
+        if (!verified) setPage('user-information')
+      }
     })
     return unsubscribe
   }, [currentUid])
@@ -51,16 +57,18 @@ function App() {
     const emailKey = `evacready-role:${email.trim().toLowerCase()}`
     let role = window.localStorage.getItem(emailKey) || 'user'
     let barangay = window.localStorage.getItem(`${emailKey}-barangay`) || ''
+    let verified = false
     try {
       const profile = await getUserProfile(uid)
       if (profile) {
         role = profile.role || role
         barangay = profile.barangay || barangay
+        verified = Boolean(profile.verified)
       }
     } catch (error) {
       console.error('Error loading user profile:', error)
     }
-    return { role, barangay }
+    return { role, barangay, verified }
   }
 
   useEffect(() => {
@@ -69,7 +77,8 @@ function App() {
       if (user) {
         // User is logged in, restore their session
         setCurrentUid(user.uid)
-        resolveRoleAndBarangay(user.uid, user.email).then(({ role, barangay }) => {
+        resolveRoleAndBarangay(user.uid, user.email).then(({ role, barangay, verified }) => {
+          setIsResidentVerified(verified)
           if (role === 'staff') setStaffBarangay(barangay)
           setPage(role === 'staff' ? 'staff-evacuees' : role === 'user' ? 'user-information' : `${role}-dashboard`)
           setIsInitializing(false)
@@ -77,6 +86,7 @@ function App() {
       } else {
         // User is not logged in
         setCurrentUid('')
+        setIsResidentVerified(false)
         setPage('login')
         setIsInitializing(false)
       }
@@ -88,7 +98,8 @@ function App() {
     try {
       const user = await signInWithEmailPassword(email, password)
       setCurrentUid(user.uid)
-      const { role, barangay } = await resolveRoleAndBarangay(user.uid, email)
+      const { role, barangay, verified } = await resolveRoleAndBarangay(user.uid, email)
+      setIsResidentVerified(verified)
       if (role === 'staff') setStaffBarangay(barangay)
       setPage(role === 'staff' ? 'staff-evacuees' : role === 'user' ? 'user-information' : `${role}-dashboard`)
     } catch (error) {
@@ -102,6 +113,7 @@ function App() {
     try {
       const user = await registerWithEmailPassword(payload)
       setCurrentUid(user.uid)
+      setIsResidentVerified(false)
       if (payload.role === 'staff') {
         setStaffBarangay(payload.barangay)
         setPage('staff-evacuees')
@@ -122,7 +134,8 @@ function App() {
       const user = await signInWithGoogle()
       const email = user.email.trim().toLowerCase()
       setCurrentUid(user.uid)
-      const { role, barangay } = await resolveRoleAndBarangay(user.uid, email)
+      const { role, barangay, verified } = await resolveRoleAndBarangay(user.uid, email)
+      setIsResidentVerified(verified)
       if (role === 'staff') setStaffBarangay(barangay)
       setPage(role === 'staff' ? 'staff-evacuees' : role === 'user' ? 'user-information' : `${role}-dashboard`)
     } catch (error) {
@@ -140,10 +153,19 @@ function App() {
     try {
       if (page.startsWith('staff-')) await setCurrentStaffStatus('Inactive')
       await signOutUser()
+      setIsResidentVerified(false)
       setPage('login')
     } catch (error) {
       alert(error.message)
     }
+  }
+
+  const handleUserNavigate = (nextPage) => {
+    if (!isResidentVerified && nextPage !== 'user-information') {
+      setPage('user-information')
+      return
+    }
+    setPage(nextPage)
   }
 
   const renderPage = () => {
@@ -151,7 +173,7 @@ function App() {
       return <LoginHomepage onContinue={handleLogin} onCreateAccount={() => setPage('register')} onGoogleAccount={handleGoogleLogin} />
     }
     if (page === 'register') {
-      return <RegisterForm onSubmit={handleRegister} onBack={() => setPage('login')} onGoogleAccount={handleGoogleLogin} />
+      return <RegisterForm onSubmit={handleRegister} onBack={() => setPage('login')} />
     }
     if (page === 'admin-dashboard' || page === 'home' || page === 'dashboard') return <Home navigate={setPage} onLogout={handleLogout} />
     if (page === 'usermanagement') return <UserManagementPage allowedRole="Staff" />
@@ -217,7 +239,7 @@ function App() {
       {isStaff ? (
         <StaffSidebar current={page} navigate={setPage} onLogout={handleLogout} />
       ) : isUser ? (
-        <UserSidebar current={page} currentUid={currentUid} navigate={setPage} onLogout={handleLogout} />
+        <UserSidebar current={page} currentUid={currentUid} navigate={handleUserNavigate} onLogout={handleLogout} isVerified={isResidentVerified} />
       ) : (
         <Sidebar current={page} navigate={setPage} onLogout={handleLogout} />
       )}

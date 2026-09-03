@@ -110,6 +110,23 @@
   color: #15803d;
 }
 
+.resident-profile-verification-notice {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border: 1px solid #fcd34d;
+  border-radius: 6px;
+  color: #92400e;
+  background: #fffbeb;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.resident-profile-verification-notice.verified {
+  border-color: #86efac;
+  color: #166534;
+  background: #f0fdf4;
+}
+
 .resident-profile-save {
   justify-self: start;
   min-height: 42px;
@@ -590,39 +607,54 @@
 }
 
 @page {
-  size: 85.6mm 54mm;
-  margin: 0;
+  size: auto;
+  margin: 10mm;
 }
 
 @media print {
-  .user-sidebar,
-  .home-header,
-  .resident-profile-panel,
-  .resident-profile-print {
-    display: none !important;
-  }
-
-  .main-content {
-    min-height: 0 !important;
+  html,
+  body {
+    width: 100% !important;
+    height: auto !important;
     margin: 0 !important;
-    padding: 0 !important;
-    background: #ffffff !important;
+    overflow: hidden !important;
   }
 
-  .resident-profile-layout,
+  body * {
+    visibility: hidden !important;
+  }
+
   .resident-profile-qr {
+    position: absolute !important;
+    top: 10mm !important;
+    left: 10mm !important;
     display: block !important;
+    width: 85.6mm !important;
+    height: auto !important;
     max-width: none !important;
     padding: 0 !important;
     border: 0 !important;
     box-shadow: none !important;
+    background: #ffffff !important;
+    visibility: visible !important;
+  }
+
+  .resident-profile-qr * {
+    visibility: visible !important;
+  }
+
+  .resident-profile-print {
+    display: none !important;
   }
 
   .resident-id-card {
     width: 85.6mm;
-    min-height: 54mm;
+    min-height: 140mm;
     margin: 0;
     border-radius: 0;
     box-shadow: none;
+    overflow: visible;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }
