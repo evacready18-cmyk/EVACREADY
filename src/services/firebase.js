@@ -61,6 +61,7 @@ export async function syncUserProfile(user, extraData = {}, firestoreInstance = 
     status: extraData.status || (userSnapshot.exists() ? userSnapshot.data().status || "Inactive" : "Inactive"),
     provider: extraData.provider || "email",
     updatedAt: serverTimestamp(),
+    ...(extraData.idPhotoUrl ? { idPhotoUrl: extraData.idPhotoUrl } : {}),
     ...(userSnapshot.exists() ? {} : { createdAt: serverTimestamp() }),
   }
 
@@ -68,10 +69,10 @@ export async function syncUserProfile(user, extraData = {}, firestoreInstance = 
   return profile
 }
 
-export async function registerWithEmailPassword({ email, password, name, role = "user", barangay = "", phone = "" }) {
+export async function registerWithEmailPassword({ email, password, name, role = "user", barangay = "", phone = "", idPhotoUrl = "" }) {
   const credential = await createUserWithEmailAndPassword(auth, email, password)
   await updateProfile(credential.user, { displayName: name })
-  await syncUserProfile(credential.user, { name, role, barangay, phone, provider: "email" })
+  await syncUserProfile(credential.user, { name, role, barangay, phone, idPhotoUrl, provider: "email" })
   return credential.user
 }
 

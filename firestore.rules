@@ -44,7 +44,7 @@ service cloud.firestore {
       return isAuthenticated() && callerExists() && callerProfile().role == 'staff';
     }
     function isValidUser(data) {
-      return data.keys().hasOnly(['uid', 'email', 'name', 'role', 'barangay', 'phone', 'status', 'evacuationCenterId', 'provider', 'verified', 'lastNotificationReadAt', 'createdAt', 'updatedAt']) &&
+      return data.keys().hasOnly(['uid', 'email', 'name', 'role', 'barangay', 'phone', 'status', 'evacuationCenterId', 'provider', 'verified', 'idPhotoUrl', 'lastNotificationReadAt', 'createdAt', 'updatedAt']) &&
         data.keys().hasAll(['uid', 'email', 'name', 'role', 'barangay', 'phone', 'provider', 'createdAt', 'updatedAt']) &&
         data.uid is string && data.uid.size() > 0 && data.uid.size() <= 128 &&
         data.email is string && data.email.size() > 0 && data.email.size() <= 254 &&
@@ -56,6 +56,7 @@ service cloud.firestore {
         (!('evacuationCenterId' in data) || (data.evacuationCenterId is string && data.evacuationCenterId.size() <= 128)) &&
         data.provider is string && data.provider.size() > 0 && data.provider.size() <= 30 &&
         (!('verified' in data) || data.verified is bool) &&
+        (!('idPhotoUrl' in data) || (data.idPhotoUrl is string && data.idPhotoUrl.size() <= 2048)) &&
         (!('lastNotificationReadAt' in data) || data.lastNotificationReadAt is timestamp) &&
         data.createdAt is timestamp && data.updatedAt is timestamp;
     }

@@ -3,6 +3,7 @@ import '../css/evacuationcenter.css'
 import '../css/evacuationcenter-modal.css'
 import { BARANGAYS } from '../../data/barangays.js'
 import { createEvacuationCenter, deleteEvacuationCenter, subscribeToEvacuationCenters } from '../../../services/firebase.js'
+import { uploadToCloudinary } from '../../../services/cloudinary.js'
 
 const defaultImage = 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=800&q=80'
 
@@ -21,6 +22,7 @@ function EvacuationCenterPage() {
   const [isSaving, setIsSaving] = React.useState(false)
   const [deletingCenterId, setDeletingCenterId] = React.useState('')
   const [newCenter, setNewCenter] = React.useState({ name: '', barangay: '', location: '', coords: '', capacity: '', imageUrl: '' })
+  const [isUploadingImage, setIsUploadingImage] = React.useState(false)
 
   React.useEffect(() => subscribeToEvacuationCenters(setCenters), [])
 
@@ -40,6 +42,19 @@ function EvacuationCenterPage() {
   const occupancy = totals.capacity - totals.available
 
   const updateField = (field) => (event) => setNewCenter((current) => ({ ...current, [field]: event.target.value }))
+  const handleImageFileChange = async (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+    setIsUploadingImage(true)
+    try {
+      const imageUrl = await uploadToCloudinary(file)
+      setNewCenter((current) => ({ ...current, imageUrl }))
+    } catch (error) {
+      alert(`Unable to upload image: ${error.message}`)
+    } finally {
+      setIsUploadingImage(false)
+    }
+  }
   const closeModal = () => {
     setIsModalOpen(false)
     setNewCenter({ name: '', barangay: '', location: '', coords: '', capacity: '', imageUrl: '' })
@@ -117,9 +132,9 @@ function EvacuationCenterPage() {
           <label className="form-group"><span className="form-label">Location</span><input className="form-input" value={newCenter.location} onChange={updateField('location')} /></label>
           <label className="form-group"><span className="form-label">Coordinates</span><input className="form-input" value={newCenter.coords} onChange={updateField('coords')} placeholder="Optional coordinates" /></label>
           <label className="form-group"><span className="form-label">Capacity</span><input className="form-input" type="number" min="1" value={newCenter.capacity} onChange={updateField('capacity')} /></label>
-          <label className="form-group"><span className="form-label">Image URL</span><input className="form-input" type="url" value={newCenter.imageUrl} onChange={updateField('imageUrl')} placeholder="Optional image URL" /></label>
+          <label className="form-group"><span className="form-label">Center Image</span><input className="form-input" type="file" accept="image/*" onChange={handleImageFileChange} disabled={isUploadingImage} />{isUploadingImage && <span className="form-hint">Uploading...</span>}</label>
         </div><div className="image-preview-wrapper"><img className="image-preview" src={newCenter.imageUrl || defaultImage} alt="Center preview" /></div></div>
-        <div className="modal-actions"><button className="button button--secondary" type="button" onClick={closeModal} disabled={isSaving}>Cancel</button><button className="button button--primary" type="button" onClick={handleAddCenter} disabled={isSaving}>{isSaving ? 'Adding...' : 'Add Center'}</button></div>
+        <div className="modal-actions"><button className="button button--secondary" type="button" onClick={closeModal} disabled={isSaving}>Cancel</button><button className="button button--primary" type="button" onClick={handleAddCenter} disabled={isSaving || isUploadingImage}>{isSaving ? 'Adding...' : 'Add Center'}</button></div>
       </div></div>}
     </div>
   )

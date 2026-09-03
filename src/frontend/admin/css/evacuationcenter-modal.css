@@ -77,6 +77,12 @@
   background: #f9fafb;
 }
 
+.form-hint {
+  color: #6366f1;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .image-preview-wrapper {
   min-height: 320px;
   border-radius: 24px;

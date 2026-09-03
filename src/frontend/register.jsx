@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import './login.css'
 import { BARANGAYS } from './data/barangays'
+import { uploadToCloudinary } from '../services/cloudinary'
 
 function RegisterForm({ onSubmit, onBack, onGoogleAccount }) {
   const [role, setRole] = useState('user')
@@ -19,8 +20,9 @@ function RegisterForm({ onSubmit, onBack, onGoogleAccount }) {
       return
     }
     setIsLoading(true)
-    const payload = { role, name, email, password, barangay, phone, idPhoto }
     try {
+      const idPhotoUrl = await uploadToCloudinary(idPhoto)
+      const payload = { role, name, email, password, barangay, phone, idPhotoUrl }
       if (onSubmit) {
         const wasRegistered = await onSubmit(payload)
         if (!wasRegistered) return
@@ -34,6 +36,8 @@ function RegisterForm({ onSubmit, onBack, onGoogleAccount }) {
       setBarangay('')
       setIdPhoto(null)
       setRole('user')
+    } catch (error) {
+      alert(error.message || 'Unable to upload ID photo.')
     } finally {
       setIsLoading(false)
     }

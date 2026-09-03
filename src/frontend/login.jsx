@@ -54,7 +54,7 @@ function LoginHomepage({ onContinue, onCreateAccount, onGoogleAccount }) {
             <button className="homepage-link primary" type="button" onClick={onCreateAccount}>
               Create account
             </button>
-            <a className="homepage-link secondary" href="#learn-more">
+            <a className="homepage-link secondary" href="/about.html" target="_blank" rel="noopener noreferrer">
               Learn more
             </a>
           </div>

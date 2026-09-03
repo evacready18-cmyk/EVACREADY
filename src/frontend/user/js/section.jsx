@@ -1,8 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
+import { PhoneCall } from 'lucide-react'
 import { dismissCurrentUserAnnouncement, markCurrentUserNotificationsRead, subscribeToAnnouncements, subscribeToDismissedAnnouncements, subscribeToResidentEvacueeHistory, subscribeToUserProfile, updateCurrentUserProfile } from '../../../services/firebase'
 import { BARANGAYS } from '../../data/barangays'
 import '../css/section.css'
+
+const EMERGENCY_HOTLINES = [
+  { name: 'LDRRMO', number: '0951 682 150', tel: '+63951682150' },
+  { name: 'MHO Isabela', number: '0963 156 6032', tel: '+639631566032' },
+  { name: 'BFP', number: '0970 465 9383', tel: '+639704659383' },
+  { name: 'PNP Isabela', number: '0999 415 476', tel: '+63999415476' },
+  { name: 'NOCECO', number: '0998 570 2725', tel: '+639985702725' },
+]
 
 const sectionTitles = {
   'user-information': 'My Profile',
@@ -184,9 +193,18 @@ function UserSection({ page, currentUid }) {
               </div>
               <p className="resident-id-card__name">{profile?.name || 'Resident'}</p>
               <div className="resident-id-card__body">
-                <div className="resident-id-card__details">
-                  <p>{profile?.barangay || 'Barangay not recorded'}</p>
-                  <p>{profile?.phone || 'Phone not recorded'}</p>
+                <div className="resident-id-card__top">
+                  <div className="resident-id-card__photo">
+                    {profile?.idPhotoUrl ? (
+                      <img src={profile.idPhotoUrl} alt="Resident ID" />
+                    ) : (
+                      <span className="resident-id-card__photo-placeholder">No ID photo</span>
+                    )}
+                  </div>
+                  <div className="resident-id-card__details">
+                    <p>{profile?.barangay || 'Barangay not recorded'}</p>
+                    <p>{profile?.phone || 'Phone not recorded'}</p>
+                  </div>
                 </div>
                 <div className="resident-id-card__code">
                   {currentUid && <QRCodeSVG value={currentUid} size={118} level="M" includeMargin />}
@@ -285,6 +303,21 @@ function UserSection({ page, currentUid }) {
                   )}
                 </tbody>
               </table>
+            </div>
+          </section>
+        ) : page === 'user-emergency-call' ? (
+          <section className="resident-emergency">
+            <p className="resident-emergency__hint">Tap a hotline to call for help immediately.</p>
+            <div className="resident-emergency__list">
+              {EMERGENCY_HOTLINES.map((hotline) => (
+                <a className="resident-emergency__item" key={hotline.tel} href={`tel:${hotline.tel}`}>
+                  <span className="resident-emergency__icon"><PhoneCall aria-hidden="true" size={22} strokeWidth={2.5} /></span>
+                  <span className="resident-emergency__details">
+                    <strong>{hotline.name}</strong>
+                    <span>{hotline.number}</span>
+                  </span>
+                </a>
+              ))}
             </div>
           </section>
         ) : (
