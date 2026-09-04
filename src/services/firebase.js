@@ -488,7 +488,7 @@ export function subscribeToUserProfile(uid, callback) {
   })
 }
 
-export async function createAnnouncement({ type, audience, priority, title, message }) {
+export async function createAnnouncement({ type, audience, priority, title, message, barangay }) {
   const user = auth.currentUser
   if (!user) throw new Error("You must be signed in to send an announcement.")
 
@@ -497,7 +497,7 @@ export async function createAnnouncement({ type, audience, priority, title, mess
     throw new Error("This account is not configured as a staff or admin account in Firestore. Ask an administrator to create the staff account from User Management, then sign in with that account.")
   }
 
-  return addDoc(collection(db, "announcements"), {
+  const announcement = {
     type,
     audience,
     priority,
@@ -505,23 +505,67 @@ export async function createAnnouncement({ type, audience, priority, title, mess
     message: message.trim(),
     authorUid: user.uid,
     createdAt: serverTimestamp(),
-  })
+  }
+
+  if (audience === "barangay") {
+    if (!barangay || !barangay.trim()) throw new Error("A barangay is required for barangay-specific alerts.")
+    announcement.barangay = barangay.trim()
+  }
+
+  return addDoc(collection(db, "announcements"), announcement)
 }
 
-export function subscribeToAnnouncements(callback, audiences = null) {
-  const announcementsQuery = audiences
-    ? query(collection(db, "announcements"), where("audience", audiences.length === 1 ? "==" : "in", audiences))
-    : query(collection(db, "announcements"), orderBy("createdAt", "desc"))
+// Merges the general audience query with a barangay-scoped query so residents/staff
+// only ever request documents their security rules allow (no partial-access list queries).
+export function subscribeToAnnouncements(callback, audiences = null, barangayScope = null) {
+  const generalAudiences = audiences ? audiences.filter((audience) => audience !== "barangay") : null
+  const includeBarangay = Boolean(audiences && audiences.includes("barangay") && barangayScope)
 
-  return onSnapshot(announcementsQuery, (snapshot) => {
-    const announcements = snapshot.docs
-      .map((announcementDoc) => ({ id: announcementDoc.id, ...announcementDoc.data() }))
+  let generalResults = []
+  let barangayResults = []
+
+  const emit = () => {
+    const merged = [...generalResults, ...barangayResults]
       .sort((first, second) => (second.createdAt?.toMillis?.() || 0) - (first.createdAt?.toMillis?.() || 0))
-    callback(announcements)
-  }, (error) => {
-    console.error("Error subscribing to announcements:", error)
-    callback([])
-  })
+    callback(merged)
+  }
+
+  const unsubscribers = []
+
+  const generalQuery = !audiences
+    ? query(collection(db, "announcements"), orderBy("createdAt", "desc"))
+    : generalAudiences.length > 0
+    ? query(collection(db, "announcements"), where("audience", generalAudiences.length === 1 ? "==" : "in", generalAudiences))
+    : null
+
+  if (generalQuery) {
+    unsubscribers.push(onSnapshot(generalQuery, (snapshot) => {
+      generalResults = snapshot.docs.map((announcementDoc) => ({ id: announcementDoc.id, ...announcementDoc.data() }))
+      emit()
+    }, (error) => {
+      console.error("Error subscribing to announcements:", error)
+      generalResults = []
+      emit()
+    }))
+  }
+
+  if (includeBarangay) {
+    const barangayQuery = query(
+      collection(db, "announcements"),
+      where("audience", "==", "barangay"),
+      where("barangay", "==", barangayScope),
+    )
+    unsubscribers.push(onSnapshot(barangayQuery, (snapshot) => {
+      barangayResults = snapshot.docs.map((announcementDoc) => ({ id: announcementDoc.id, ...announcementDoc.data() }))
+      emit()
+    }, (error) => {
+      console.error("Error subscribing to barangay announcements:", error)
+      barangayResults = []
+      emit()
+    }))
+  }
+
+  return () => unsubscribers.forEach((unsubscribe) => unsubscribe())
 }
 
 export function subscribeToDismissedAnnouncements(callback) {

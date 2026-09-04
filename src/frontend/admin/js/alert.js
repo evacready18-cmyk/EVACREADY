@@ -4,7 +4,7 @@ import { createAnnouncement, dismissCurrentUserAnnouncement, subscribeToAnnounce
 
 const section = React.createElement
 
-const AlertPage = ({ audienceFilter = null }) => {
+const AlertPage = ({ audienceFilter = null, barangayScope = '' }) => {
   const [alertType, setAlertType] = useState('Information')
   const [audience, setAudience] = useState('all')
   const [priority, setPriority] = useState('medium')
@@ -18,7 +18,7 @@ const AlertPage = ({ audienceFilter = null }) => {
   const [notifications, setNotifications] = useState([])
   const [dismissedNotificationIds, setDismissedNotificationIds] = useState([])
 
-  React.useEffect(() => subscribeToAnnouncements(setNotifications, audienceFilter), [audienceFilter])
+  React.useEffect(() => subscribeToAnnouncements(setNotifications, audienceFilter, barangayScope), [audienceFilter, barangayScope])
   React.useEffect(() => subscribeToDismissedAnnouncements(setDismissedNotificationIds), [])
 
   const formatDate = (createdAt) => createdAt?.toDate
@@ -60,7 +60,7 @@ const AlertPage = ({ audienceFilter = null }) => {
     }
 
     try {
-      await createAnnouncement({ type: alertType, audience, priority, title, message })
+      await createAnnouncement({ type: alertType, audience, priority, title, message, barangay: audience === 'barangay' ? barangayScope : undefined })
       setStatus({ type: 'success', text: 'Alert sent successfully!' })
       setTitle('')
       setMessage('')
@@ -134,6 +134,7 @@ const AlertPage = ({ audienceFilter = null }) => {
               section('option', { value: 'evacuees' }, 'Evacuees'),
               section('option', { value: 'staff' }, 'Staff'),
               section('option', { value: 'all' }, 'All Residents'),
+              barangayScope && section('option', { value: 'barangay' }, `My Barangay (${barangayScope})`),
             ),
           ),
           section(

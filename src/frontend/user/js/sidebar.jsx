@@ -42,7 +42,7 @@ function UserSidebar({ current, currentUid, navigate, onLogout, isVerified }) {
         !dismissedNotificationIds.includes(announcement.id) &&
         (announcement.createdAt?.toMillis?.() || 0) > lastReadTime,
       ).length)
-    }, ['all', 'evacuees'])
+    }, ['all', 'evacuees', 'barangay'], profile.barangay)
   }, [profile, dismissedNotificationIds])
 
   useEffect(() => {

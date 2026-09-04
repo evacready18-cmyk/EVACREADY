@@ -180,7 +180,7 @@ function App() {
     if (page.startsWith('user-')) return <UserSection page={page} currentUid={currentUid} />
     if (page === 'staff-evacuees') return <EvacManagePage barangay={staffBarangay} />
     if (page === 'staff-usermanagement') return <UserManagementPage allowedRole="User" barangay={staffBarangay} />
-    if (page === 'staff-alert') return <AlertPage audienceFilter={['staff', 'evacuees', 'all']} />
+    if (page === 'staff-alert') return <AlertPage audienceFilter={['staff', 'evacuees', 'all', 'barangay']} barangayScope={staffBarangay} />
     if (page === 'staff-evacuation-center') return <EvacuationCenterPage />
     if (page === 'staff-report') return <ReportPage barangay={staffBarangay} />
     if (page === 'staff-settings') return <SettingsPage />

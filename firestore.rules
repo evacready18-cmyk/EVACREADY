@@ -75,15 +75,17 @@ service cloud.firestore {
         data.createdAt is timestamp && data.updatedAt is timestamp;
     }
     function isValidAnnouncement(data) {
-      return data.keys().hasOnly(['type', 'audience', 'priority', 'title', 'message', 'authorUid', 'createdAt']) &&
+      return data.keys().hasOnly(['type', 'audience', 'priority', 'title', 'message', 'authorUid', 'createdAt', 'barangay']) &&
         data.keys().hasAll(['type', 'audience', 'priority', 'title', 'message', 'authorUid', 'createdAt']) &&
         data.type in ['Information', 'Warning', 'Evacuation', 'Advisory'] &&
-        data.audience in ['all', 'evacuees', 'staff'] &&
+        data.audience in ['all', 'evacuees', 'staff', 'barangay'] &&
         data.priority in ['low', 'medium', 'high'] &&
         data.title is string && data.title.size() > 0 && data.title.size() <= 120 &&
         data.message is string && data.message.size() > 0 && data.message.size() <= 2000 &&
         data.authorUid == request.auth.uid &&
-        data.createdAt is timestamp && data.createdAt == request.time;
+        data.createdAt is timestamp && data.createdAt == request.time &&
+        (data.audience == 'barangay') == ('barangay' in data) &&
+        (!('barangay' in data) || (data.barangay is string && data.barangay.size() > 0 && data.barangay.size() <= 80));
     }
     function isValidCheckIn(centerId, data) {
       return data.keys().hasOnly(['residentUid', 'residentName', 'phone', 'barangay', 'barangayKey', 'centerName', 'historyId', 'checkedInAt']) &&
@@ -204,8 +206,11 @@ service cloud.firestore {
       allow read: if isAdmin() ||
         (isStaff() && resource.data.audience in ['staff', 'evacuees', 'all']) ||
         (isResident() && resource.data.audience == 'all') ||
-        (isResident() && resource.data.audience == 'evacuees');
-      allow create: if isCenterManager() && isValidAnnouncement(request.resource.data);
+        (isResident() && resource.data.audience == 'evacuees') ||
+        (resource.data.audience == 'barangay' && (isStaff() || isResident()) &&
+          callerProfile().barangay.lower().trim() == resource.data.barangay.lower().trim());
+      allow create: if isCenterManager() && isValidAnnouncement(request.resource.data) &&
+        (request.resource.data.audience != 'barangay' || isAdmin() || isStaffForBarangay(request.resource.data.barangay));
     }
 
     match /evacuationCenters/{centerId} {

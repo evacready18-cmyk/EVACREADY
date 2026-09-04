@@ -75,8 +75,8 @@ function UserSection({ page, currentUid }) {
   useEffect(() => {
     if (page !== 'user-announcement' || !currentUid) return undefined
     markCurrentUserNotificationsRead().catch((error) => console.error('Error marking notifications as read:', error))
-    return subscribeToAnnouncements(setAnnouncements, ['all', 'evacuees'])
-  }, [page, currentUid])
+    return subscribeToAnnouncements(setAnnouncements, ['all', 'evacuees', 'barangay'], profile?.barangay)
+  }, [page, currentUid, profile?.barangay])
 
   useEffect(() => {
     if (page !== 'user-history' || !currentUid) return undefined
