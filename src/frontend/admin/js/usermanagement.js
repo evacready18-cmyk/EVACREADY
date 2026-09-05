@@ -21,7 +21,8 @@ function normalizeUser(raw) {
     status: raw.status || 'Active',
     joinDate: formatJoinDate(raw),
     barangay: raw.barangay || '',
-    verificationId: raw.verificationId || '',
+    idType: raw.idType || '',
+    idNumber: raw.idNumber || '',
     idPhotoUrl: raw.idPhotoUrl || '',
     verified: Boolean(raw.verified),
   }
@@ -276,7 +277,7 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
             section('th', null, 'Role'),
             section('th', null, 'Status'),
             section('th', null, 'Barangay'),
-            section('th', null, 'Verification ID'),
+            section('th', null, 'ID details'),
             section('th', null, 'Date Created'),
             section('th', null, 'Action'),
           ),
@@ -297,7 +298,7 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
                 section('span', { className: `status-badge status-${user.status.toLowerCase()}` }, user.status)
               ),
               section('td', null, user.barangay),
-              section('td', null, user.verificationId || 'Not provided'),
+              section('td', null, user.idNumber ? `${user.idType || 'ID'}: ${user.idNumber}` : 'Not provided'),
               section('td', null, user.joinDate || 'Not recorded'),
               section('td', null,
                 section(
@@ -351,8 +352,9 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
           null,
           section('h3', null, 'Verify Account?'),
           section('div', { className: 'modal-body' },
-            section('p', null, `Review ${selectedUser.name}'s barangay ID before verifying this account.`),
-            section('p', null, section('strong', null, 'Verification ID: '), selectedUser.verificationId || 'Not provided'),
+            section('p', null, `Review ${selectedUser.name}'s submitted ID before verifying this account.`),
+            section('p', null, section('strong', null, 'ID type: '), selectedUser.idType || 'Not provided'),
+            section('p', null, section('strong', null, 'ID number: '), selectedUser.idNumber || 'Not provided'),
             selectedUser.idPhotoUrl && section(
               'a',
               { href: selectedUser.idPhotoUrl, target: '_blank', rel: 'noopener noreferrer' },

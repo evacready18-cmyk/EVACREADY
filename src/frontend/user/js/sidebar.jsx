@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
-import { Bell, History, Menu, PhoneCall, UserRound } from 'lucide-react'
+import { Bell, History, IdCard, Menu, PhoneCall, UserRound } from 'lucide-react'
 import '../css/sidebar.css'
 import { subscribeToAnnouncements, subscribeToDismissedAnnouncements, subscribeToUserProfile } from '../../../services/firebase'
 
 const userLinks = [
   { text: 'My Profile', page: 'user-information', Icon: UserRound },
+  { text: 'My ID', page: 'user-id', Icon: IdCard },
   { text: 'Alert Notification', page: 'user-announcement' },
   { text: 'Check-in History', page: 'user-history', Icon: History },
-  { text: 'Emergency Call', page: 'user-emergency-call', Icon: PhoneCall },
+  { text: 'Emergency Hotline', page: 'user-emergency-call', Icon: PhoneCall },
 ]
 
 function UserSidebar({ current, currentUid, navigate, onLogout, isVerified }) {

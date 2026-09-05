@@ -10,15 +10,17 @@ function RegisterForm({ onSubmit, onBack }) {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [phone, setPhone] = useState('')
-  const [verificationId, setVerificationId] = useState('')
+  const [address, setAddress] = useState('')
+  const [idNumber, setIdNumber] = useState('')
+  const [idType, setIdType] = useState('')
   const [barangay, setBarangay] = useState('')
   const [idPhoto, setIdPhoto] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!name || !email || !password || !barangay || !phone || !verificationId || !idPhoto) {
-      alert('Please fill all required fields, including your verification ID, phone number, and ID photo.')
+    if (!name || !email || !password || !address || !barangay || !phone || !idType || !idNumber || !idPhoto) {
+      alert('Please fill all required fields, including your address, ID type, ID number, phone number, and ID photo.')
       return
     }
     if (!/^09\d{9}$/.test(phone) && !/^\+639\d{9}$/.test(phone)) {
@@ -28,7 +30,7 @@ function RegisterForm({ onSubmit, onBack }) {
     setIsLoading(true)
     try {
       const idPhotoUrl = await uploadToCloudinary(idPhoto)
-      const payload = { role, name, email, password, barangay, phone, verificationId, idPhotoUrl }
+      const payload = { role, name, email, password, address, barangay, phone, idType, idNumber, idPhotoUrl }
       if (onSubmit) {
         const wasRegistered = await onSubmit(payload)
         if (!wasRegistered) return
@@ -40,7 +42,9 @@ function RegisterForm({ onSubmit, onBack }) {
       setPassword('')
       setShowPassword(false)
       setPhone('')
-      setVerificationId('')
+      setAddress('')
+      setIdNumber('')
+      setIdType('')
       setBarangay('')
       setIdPhoto(null)
       setRole('user')
@@ -113,8 +117,30 @@ function RegisterForm({ onSubmit, onBack }) {
         </div>
 
         <div className="login-field">
-          <label htmlFor="verificationId">Barangay verification ID</label>
-          <input id="verificationId" name="verificationId" type="text" placeholder="Enter your barangay ID number" value={verificationId} onChange={e => setVerificationId(e.target.value)} required />
+          <label htmlFor="address">Address</label>
+          <input id="address" name="address" type="text" placeholder="Enter your complete address" value={address} onChange={e => setAddress(e.target.value)} required />
+        </div>
+
+        <div className="login-field">
+          <label htmlFor="idNumber">ID number</label>
+          <input id="idNumber" name="idNumber" type="text" placeholder="Enter your ID number" value={idNumber} onChange={e => setIdNumber(e.target.value)} required />
+        </div>
+
+        <div className="login-field">
+          <label htmlFor="idType">ID type</label>
+          <select id="idType" name="idType" value={idType} onChange={e => setIdType(e.target.value)} required>
+            <option value="">Select ID type</option>
+            <option value="Philippine National ID">Philippine National ID</option>
+            <option value="Driver's License">Driver&apos;s License</option>
+            <option value="Passport">Passport</option>
+            <option value="UMID">UMID</option>
+            <option value="SSS ID">SSS ID</option>
+            <option value="PhilHealth ID">PhilHealth ID</option>
+            <option value="Postal ID">Postal ID</option>
+            <option value="Voter's ID">Voter&apos;s ID</option>
+            <option value="Barangay ID">Barangay ID</option>
+            <option value="Other government-issued ID">Other government-issued ID</option>
+          </select>
         </div>
 
         <div className="login-field">

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { PhoneCall } from 'lucide-react'
-import { dismissCurrentUserAnnouncement, markCurrentUserNotificationsRead, subscribeToAnnouncements, subscribeToDismissedAnnouncements, subscribeToResidentEvacueeHistory, subscribeToUserProfile, updateCurrentUserProfile } from '../../../services/firebase'
+import { changeCurrentUserPassword, dismissCurrentUserAnnouncement, markCurrentUserNotificationsRead, subscribeToAnnouncements, subscribeToDismissedAnnouncements, subscribeToResidentEvacueeHistory, subscribeToUserProfile } from '../../../services/firebase'
 import { BARANGAYS } from '../../data/barangays'
 import '../css/section.css'
 
@@ -15,10 +15,11 @@ const EMERGENCY_HOTLINES = [
 
 const sectionTitles = {
   'user-information': 'My Profile',
+  'user-id': 'My ID',
   'user-request': 'Request',
   'user-announcement': 'Alert Notification',
   'user-history': 'Check-in History',
-  'user-emergency-call': 'Emergency Call',
+  'user-emergency-call': 'Emergency Hotline',
 }
 
 function formatHistoryDate(timestamp) {
@@ -32,9 +33,11 @@ function historyDateKey(timestamp) {
 function UserSection({ page, currentUid }) {
   const title = sectionTitles[page] || 'My Profile'
   const [profile, setProfile] = useState(null)
-  const [form, setForm] = useState({ name: '', phone: '', barangay: '' })
+  const [form, setForm] = useState({ name: '', phone: '', address: '', barangay: '' })
   const [isLoading, setIsLoading] = useState(page === 'user-information')
-  const [isSaving, setIsSaving] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [message, setMessage] = useState('')
   const [announcements, setAnnouncements] = useState([])
   const [dismissedAnnouncementIds, setDismissedAnnouncementIds] = useState([])
@@ -52,6 +55,7 @@ function UserSection({ page, currentUid }) {
       setForm({
         name: nextProfile?.name || '',
         phone: nextProfile?.phone || '',
+        address: nextProfile?.address || '',
         barangay: nextProfile?.barangay || '',
       })
       setIsLoading(false)
@@ -98,33 +102,31 @@ function UserSection({ page, currentUid }) {
   const activeHistoryCount = history.filter((record) => record.status === 'Active').length
   const checkedOutHistoryCount = history.filter((record) => record.status === 'Checked out').length
 
-  const handleChange = (event) => {
-    const { name, value } = event.target
-    setForm((currentForm) => ({ ...currentForm, [name]: value }))
-    setMessage('')
-  }
-
-  const handleSubmit = async (event) => {
+  const handleChangePassword = async (event) => {
     event.preventDefault()
-    if (!form.name.trim() || !form.phone.trim() || !form.barangay) {
-      setMessage('Complete your name, phone number, and barangay before saving.')
+    if (newPassword.length < 6) {
+      setMessage('Password must be at least 6 characters long.')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setMessage('Passwords do not match.')
       return
     }
 
-    setIsSaving(true)
+    setIsChangingPassword(true)
     setMessage('')
     try {
-      await updateCurrentUserProfile(form)
-      setMessage('Profile updated.')
+      await changeCurrentUserPassword(newPassword)
+      setNewPassword('')
+      setConfirmPassword('')
+      setMessage('Password updated.')
     } catch (error) {
-      setMessage(error.message || 'Unable to update your profile.')
+      setMessage(error.code === 'auth/requires-recent-login'
+        ? 'Please sign out and sign in again before changing your password.'
+        : error.message || 'Unable to update your password.')
     } finally {
-      setIsSaving(false)
+      setIsChangingPassword(false)
     }
-  }
-
-  const handlePrint = () => {
-    window.print()
   }
 
   return (
@@ -161,10 +163,10 @@ function UserSection({ page, currentUid }) {
                       : 'Your account is still being verified. Please wait for verification before using the full system.'}
                   </p>
                 )}
-                <form className="resident-profile-form" onSubmit={handleSubmit}>
+                <div className="resident-profile-form">
                   <label>
                     Full name
-                    <input name="name" value={form.name} onChange={handleChange} autoComplete="name" required />
+                    <input name="name" value={form.name} readOnly aria-readonly="true" autoComplete="name" required />
                   </label>
                   <label>
                     Email address
@@ -172,18 +174,33 @@ function UserSection({ page, currentUid }) {
                   </label>
                   <label>
                     Phone number
-                    <input name="phone" value={form.phone} onChange={handleChange} type="tel" autoComplete="tel" required />
+                    <input name="phone" value={form.phone} readOnly aria-readonly="true" type="tel" autoComplete="tel" required />
+                  </label>
+                  <label>
+                    Address
+                    <input name="address" value={form.address} readOnly aria-readonly="true" type="text" autoComplete="street-address" required />
                   </label>
                   <label>
                     Barangay
-                    <select name="barangay" value={form.barangay} onChange={handleChange} required>
+                    <select name="barangay" value={form.barangay} disabled required>
                       <option value="">Select barangay</option>
                       {BARANGAYS.map((barangay) => <option key={barangay} value={barangay}>{barangay}</option>)}
                     </select>
                   </label>
-                  {message && <p className={`resident-profile-message${message === 'Profile updated.' ? ' success' : ''}`} role="status">{message}</p>}
-                  <button type="submit" className="resident-profile-save" disabled={isSaving}>
-                    {isSaving ? 'Saving...' : 'Save changes'}
+                </div>
+                <form className="resident-profile-form resident-password-form" onSubmit={handleChangePassword}>
+                  <h3>Change password</h3>
+                  <label>
+                    New password
+                    <input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={6} required />
+                  </label>
+                  <label>
+                    Confirm new password
+                    <input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={6} required />
+                  </label>
+                  {message && <p className={`resident-profile-message${message === 'Password updated.' ? ' success' : ''}`} role="status">{message}</p>}
+                  <button type="submit" className="resident-profile-save" disabled={isChangingPassword}>
+                    {isChangingPassword ? 'Updating...' : 'Update password'}
                   </button>
                 </form>
               </>
@@ -212,6 +229,7 @@ function UserSection({ page, currentUid }) {
                   </div>
                   <div className="resident-id-card__details">
                     <p>{profile?.barangay || 'Barangay not recorded'}</p>
+                    <p>{profile?.address || 'Address not recorded'}</p>
                     <p>{profile?.phone || 'Phone not recorded'}</p>
                   </div>
                 </div>
@@ -222,13 +240,44 @@ function UserSection({ page, currentUid }) {
               </div>
               <p className="resident-id-card__footer">Emergency resident identification</p>
             </div>
-            <button type="button" className="resident-profile-print" onClick={handlePrint}>
-              Print resident ID
-            </button>
           </section>
         </div>
       )}
-      {page !== 'user-information' && (
+      {page === 'user-id' && (
+        <div className="resident-id-section">
+          <section className="resident-profile-panel">
+            <div className="resident-profile-panel__heading">
+              <div>
+                <p className="resident-profile-panel__eyebrow">Identification</p>
+                <h2>My uploaded ID</h2>
+              </div>
+              <span className={`resident-profile-panel__verification${profile?.verified ? ' verified' : ''}`}>
+                {profile?.verified ? 'Verified account' : 'Pending verification'}
+              </span>
+            </div>
+            <div className="resident-id-details">
+              <div className="resident-id-details__photo">
+                {profile?.idPhotoUrl ? (
+                  <a href={profile.idPhotoUrl} target="_blank" rel="noopener noreferrer">
+                    <img src={profile.idPhotoUrl} alt="Uploaded identification document" />
+                  </a>
+                ) : (
+                  <span className="resident-id-card__photo-placeholder">No ID photo uploaded</span>
+                )}
+              </div>
+              <div className="resident-id-details__info">
+                <p><strong>ID type</strong>{profile?.idType || 'Not recorded'}</p>
+                <p><strong>ID number</strong>{profile?.idNumber || 'Not recorded'}</p>
+                <p><strong>Name</strong>{profile?.name || 'Not recorded'}</p>
+                <p><strong>Address</strong>{profile?.address || 'Not recorded'}</p>
+                <p><strong>Barangay</strong>{profile?.barangay || 'Not recorded'}</p>
+                <p><strong>Phone number</strong>{profile?.phone || 'Not recorded'}</p>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
+      {page !== 'user-information' && page !== 'user-id' && (
         page === 'user-announcement' ? (
           <section className="resident-announcements">
             {announcements.filter((announcement) => !dismissedAnnouncementIds.includes(announcement.id)).length === 0 ? (

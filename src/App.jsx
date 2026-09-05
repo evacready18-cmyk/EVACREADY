@@ -68,7 +68,7 @@ function App() {
     } catch (error) {
       console.error('Error loading user profile:', error)
     }
-    return { role, barangay, verified }
+    return { role: String(role).trim().toLowerCase(), barangay, verified }
   }
 
   useEffect(() => {

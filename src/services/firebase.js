@@ -6,6 +6,7 @@ import {
   getAuth,
   signInWithEmailAndPassword,
   signOut,
+  updatePassword,
   updateProfile,
   GoogleAuthProvider,
   signInWithPopup,
@@ -56,9 +57,11 @@ export async function syncUserProfile(user, extraData = {}, firestoreInstance = 
     email: user.email,
     name: user.displayName || extraData.name || "",
     role: extraData.role || "user",
+    address: extraData.address || "",
     barangay: extraData.barangay || "",
     phone: extraData.phone || "",
-    ...(extraData.verificationId ? { verificationId: extraData.verificationId } : {}),
+    ...(extraData.idType ? { idType: extraData.idType } : {}),
+    ...(extraData.idNumber ? { idNumber: extraData.idNumber } : {}),
     status: extraData.status || (userSnapshot.exists() ? userSnapshot.data().status || "Inactive" : "Inactive"),
     provider: extraData.provider || "email",
     updatedAt: serverTimestamp(),
@@ -70,10 +73,10 @@ export async function syncUserProfile(user, extraData = {}, firestoreInstance = 
   return profile
 }
 
-export async function registerWithEmailPassword({ email, password, name, role = "user", barangay = "", phone = "", verificationId = "", idPhotoUrl = "" }) {
+export async function registerWithEmailPassword({ email, password, name, role = "user", address = "", barangay = "", phone = "", idType = "", idNumber = "", idPhotoUrl = "" }) {
   const credential = await createUserWithEmailAndPassword(auth, email, password)
   await updateProfile(credential.user, { displayName: name })
-  await syncUserProfile(credential.user, { name, role, barangay, phone, verificationId, idPhotoUrl, provider: "email" })
+  await syncUserProfile(credential.user, { name, role, address, barangay, phone, idType, idNumber, idPhotoUrl, provider: "email" })
   return credential.user
 }
 
@@ -102,6 +105,12 @@ export async function signInWithEmailPassword(email, password) {
 
 export async function signOutUser() {
   await signOut(auth)
+}
+
+export async function changeCurrentUserPassword(password) {
+  const user = auth.currentUser
+  if (!user) throw new Error("You must be signed in to change your password.")
+  await updatePassword(user, password)
 }
 
 export async function setCurrentStaffStatus(status) {

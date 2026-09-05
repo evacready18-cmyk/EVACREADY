@@ -238,6 +238,14 @@
   line-height: 1.6;
 }
 
+.notification-item__footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+}
+
 .notification-empty {
   padding: 14px 16px;
   background: #f8fafc;
