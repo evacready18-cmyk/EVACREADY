@@ -28,6 +28,13 @@ function normalizeUser(raw) {
   }
 }
 
+function getStatusLabel(status, allowedRole) {
+  if (allowedRole === 'User') {
+    return status === 'Active' ? 'Check-in' : 'Check-out'
+  }
+  return status
+}
+
 function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
   const [users, setUsers] = React.useState([])
   const [searchQuery, setSearchQuery] = React.useState('')
@@ -148,7 +155,7 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
     setIsActivating(true)
     try {
       await activateResidentAtCenter(activationCenterId, activationUser.id)
-      alert(`${activationUser.name} is now active and has been added to Evacuees.`)
+      alert(`${activationUser.name} has been checked in and added to Evacuees.`)
       setActivationUser(null)
       setActivationCenterId('')
     } catch (error) {
@@ -254,9 +261,9 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
             value: statusFilter,
             onChange: (e) => setStatusFilter(e.target.value),
           },
-          section('option', null, 'All Status'),
-          section('option', null, 'Active'),
-          section('option', null, 'Inactive'),
+          section('option', { value: 'All' }, allowedRole === 'User' ? 'All Check-in Status' : 'All Status'),
+          section('option', { value: 'Active' }, allowedRole === 'User' ? 'Check-in' : 'Active'),
+          section('option', { value: 'Inactive' }, allowedRole === 'User' ? 'Check-out' : 'Inactive'),
         ),
       ),
     ),
@@ -295,7 +302,7 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
                 section('span', { className: `role-badge role-${user.role.toLowerCase()}` }, user.role)
               ),
               section('td', null,
-                section('span', { className: `status-badge status-${user.status.toLowerCase()}` }, user.status)
+                section('span', { className: `status-badge status-${user.status.toLowerCase()}` }, getStatusLabel(user.status, allowedRole))
               ),
               section('td', null, user.barangay),
               section('td', null, user.idNumber ? `${user.idType || 'ID'}: ${user.idNumber}` : 'Not provided'),
@@ -320,7 +327,7 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
                   allowedRole !== 'Staff' && section('button', {
                     className: 'btn-action btn-edit',
                     onClick: () => handleToggleStatus(user),
-                  }, user.status === 'Active' ? 'Set Inactive' : 'Set Active'),
+                  }, user.status === 'Active' ? 'Check-out' : 'Check-in'),
                   allowedRole === 'Staff' && section('button', {
                     className: 'btn-action btn-edit',
                     onClick: () => handleAction(user, 'changeBarangay'),
@@ -450,9 +457,9 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
       section(
         'div',
         { className: 'modal-content', onClick: (event) => event.stopPropagation() },
-        section('h3', null, 'Activate Resident'),
+        section('h3', null, 'Check In Resident'),
         section('div', { className: 'modal-body' },
-          section('p', null, `Activate ${activationUser.name} and check them into an evacuation center.`),
+          section('p', null, `Check in ${activationUser.name} to an evacuation center.`),
           section('select', { className: 'modal-input', value: activationCenterId, onChange: (event) => setActivationCenterId(event.target.value), disabled: isActivating },
             section('option', { value: '' }, 'Select evacuation center'),
             ...centers.filter((center) => center.barangay === activationUser.barangay && Number(center.availableSlots) > 0)
@@ -461,7 +468,7 @@ function UserManagementPage({ allowedRole = 'Staff', barangay = '' } = {}) {
         ),
         section('div', { className: 'modal-actions' },
           section('button', { className: 'btn-cancel', onClick: () => setActivationUser(null), disabled: isActivating }, 'Cancel'),
-          section('button', { className: 'btn-confirm', onClick: handleActivateAtCenter, disabled: !activationCenterId || isActivating }, isActivating ? 'Activating...' : 'Activate'),
+          section('button', { className: 'btn-confirm', onClick: handleActivateAtCenter, disabled: !activationCenterId || isActivating }, isActivating ? 'Checking in...' : 'Check In'),
         ),
       ),
     ),

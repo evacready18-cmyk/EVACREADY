@@ -3,7 +3,8 @@ import '../css/sidebar.css'
 
 const sidebarLinks = [
   { text: 'Dashboard', page: 'dashboard' },
-  { text: 'Alert and Notification', page: 'alert' },
+  { text: 'Alert', page: 'alert' },
+  { text: 'System Notification', page: 'notifications' },
   { text: 'Evacuees Management', page: 'evacmanage' },
   { text: 'Evacuation Center', page: 'evacuationcenter' },
   { text: 'Reports', page: 'report' },

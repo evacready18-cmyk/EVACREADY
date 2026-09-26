@@ -158,7 +158,7 @@ function Home({ navigate, onLogout, role = 'admin' }) {
           ),
           section(
             'button',
-            { className: 'action-card action-card--center', type: 'button', onClick: () => navigate('evacmanage') },
+            { className: 'action-card action-card--center', type: 'button', onClick: () => navigate('evacuationcenter-add') },
             section('span', null, '🏠'),
             section('strong', null, 'Open Evacuation Center'),
           ),

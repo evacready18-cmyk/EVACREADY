@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
 import '../css/alert.css'
-import { createAnnouncement, dismissCurrentUserAnnouncement, subscribeToAnnouncements, subscribeToDismissedAnnouncements } from '../../../services/firebase.js'
+import { createAnnouncement, deleteAnnouncement, subscribeToAnnouncements, subscribeToDismissedAnnouncements } from '../../../services/firebase.js'
 
 const section = React.createElement
 
-const AlertPage = ({ audienceFilter = null, barangayScope = '' }) => {
+const AlertPage = ({ audienceFilter = null, barangayScope = '', notificationsOnly = false, canDeleteNotifications = false }) => {
   const [alertType, setAlertType] = useState('Information')
+  const [channel, setChannel] = useState('sms')
   const [audience, setAudience] = useState('all')
   const [priority, setPriority] = useState('medium')
   const [title, setTitle] = useState('')
@@ -14,12 +15,19 @@ const AlertPage = ({ audienceFilter = null, barangayScope = '' }) => {
   const [filterType, setFilterType] = useState('All Types')
   const [filterDate, setFilterDate] = useState('All Dates')
   const [searchQuery, setSearchQuery] = useState('')
+  const [notificationPage, setNotificationPage] = useState(1)
+  const [currentTime] = useState(() => Date.now())
 
   const [notifications, setNotifications] = useState([])
   const [dismissedNotificationIds, setDismissedNotificationIds] = useState([])
 
-  React.useEffect(() => subscribeToAnnouncements(setNotifications, audienceFilter, barangayScope), [audienceFilter, barangayScope])
-  React.useEffect(() => subscribeToDismissedAnnouncements(setDismissedNotificationIds), [])
+  React.useEffect(() => {
+    return subscribeToAnnouncements(setNotifications, audienceFilter, barangayScope)
+  }, [audienceFilter, barangayScope])
+  React.useEffect(() => {
+    if (!notificationsOnly) return undefined
+    return subscribeToDismissedAnnouncements(setDismissedNotificationIds)
+  }, [notificationsOnly])
 
   const formatDate = (createdAt) => createdAt?.toDate
     ? createdAt.toDate().toISOString().split('T')[0]
@@ -36,7 +44,7 @@ const AlertPage = ({ audienceFilter = null, barangayScope = '' }) => {
         : filterDate === 'Today'
         ? notification.createdAt?.toDate && notification.createdAt.toDate().toDateString() === new Date().toDateString()
         : filterDate === 'This Week'
-        ? notification.createdAt?.toDate && notification.createdAt.toDate() >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+        ? notification.createdAt?.toDate && notification.createdAt.toDate() >= new Date(currentTime - 7 * 24 * 60 * 60 * 1000)
         : true,
     )
     .filter((notification) =>
@@ -44,9 +52,17 @@ const AlertPage = ({ audienceFilter = null, barangayScope = '' }) => {
       notification.message.toLowerCase().includes(searchQuery.toLowerCase()),
     )
 
+  const notificationsPerPage = 3
+  const notificationPageCount = Math.max(1, Math.ceil(filteredNotifications.length / notificationsPerPage))
+  const safeNotificationPage = Math.min(notificationPage, notificationPageCount)
+  const visibleNotifications = filteredNotifications.slice(
+    (safeNotificationPage - 1) * notificationsPerPage,
+    safeNotificationPage * notificationsPerPage,
+  )
+
   const handleDismissNotification = async (notificationId) => {
     try {
-      await dismissCurrentUserAnnouncement(notificationId)
+      await deleteAnnouncement(notificationId)
     } catch (error) {
       setStatus({ type: 'error', text: error.message || 'Unable to delete notification.' })
     }
@@ -60,8 +76,8 @@ const AlertPage = ({ audienceFilter = null, barangayScope = '' }) => {
     }
 
     try {
-      await createAnnouncement({ type: alertType, audience, priority, title, message, barangay: audience === 'barangay' ? barangayScope : undefined })
-      setStatus({ type: 'success', text: 'Alert sent successfully!' })
+      await createAnnouncement({ channel, type: alertType, audience, priority, title, message, barangay: audience === 'barangay' ? barangayScope : undefined })
+      setStatus({ type: 'success', text: `${channel === 'sms' ? 'SMS' : 'Web'} alert sent successfully!` })
       setTitle('')
       setMessage('')
     } catch (error) {
@@ -72,6 +88,7 @@ const AlertPage = ({ audienceFilter = null, barangayScope = '' }) => {
   const handleCancel = (event) => {
     event.preventDefault()
     setAlertType('Information')
+    setChannel('sms')
     setAudience('all')
     setPriority('medium')
     setTitle('')
@@ -82,12 +99,12 @@ const AlertPage = ({ audienceFilter = null, barangayScope = '' }) => {
   return section(
     'div',
     { className: 'dashboard-card alert-page' },
-    section(
-      'div',
-      { className: 'page-header' },
-      section('h1', null, 'Create Alert'),
-      section('p', null, 'Choose an alert type, target audience, priority, and write your message.'),
-    ),
+      section(
+        'div',
+        { className: 'page-header' },
+        section('h1', null, notificationsOnly ? 'System Notification' : `Create Alert for ${channel === 'sms' ? 'SMS' : 'Web'}`),
+        section('p', null, notificationsOnly ? 'Review and manage recent system notifications.' : `Choose an alert type, target audience, priority, and compose your ${channel === 'sms' ? 'SMS' : 'Web'} alert.`),
+      ),
     status &&
       section(
         'div',
@@ -96,8 +113,8 @@ const AlertPage = ({ audienceFilter = null, barangayScope = '' }) => {
       ),
     section(
       'div',
-      { className: 'alert-layout' },
-      section(
+      { className: `alert-layout${notificationsOnly ? ' alert-layout--notifications-only' : ' alert-layout--alert-only'}` },
+      !notificationsOnly && section(
         'form',
         { className: 'alert-form', onSubmit: handleSubmit },
         section(
@@ -135,6 +152,21 @@ const AlertPage = ({ audienceFilter = null, barangayScope = '' }) => {
               section('option', { value: 'staff' }, 'Staff'),
               section('option', { value: 'all' }, 'All Residents'),
               barangayScope && section('option', { value: 'barangay' }, `My Barangay (${barangayScope})`),
+            ),
+          ),
+          section(
+            'div',
+            { className: 'form-group' },
+            section('label', { htmlFor: 'alert-channel' }, 'Delivery Channel'),
+            section(
+              'select',
+              {
+                id: 'alert-channel',
+                value: channel,
+                onChange: (event) => setChannel(event.target.value),
+              },
+              section('option', { value: 'sms' }, 'SMS'),
+              section('option', { value: 'web' }, 'Web'),
             ),
           ),
           section(
@@ -180,21 +212,13 @@ const AlertPage = ({ audienceFilter = null, barangayScope = '' }) => {
         section(
           'div',
           { className: 'alert-form-actions' },
-          section(
-            'button',
-            { className: 'button button--cancel', type: 'button', onClick: handleCancel },
-            'Cancel',
-          ),
-          section(
-            'button',
-            { className: 'button button--send', type: 'submit' },
-            'Send Alert',
-          ),
+          section('button', { className: 'button button--cancel', type: 'button', onClick: handleCancel }, 'Cancel'),
+          section('button', { className: 'button button--send', type: 'submit' }, 'Send Alert'),
         ),
       ),
-      section(
+      notificationsOnly && section(
         'aside',
-        { className: 'notification-panel' },
+        { className: `notification-panel${notificationsOnly ? ' notification-panel--standalone' : ''}` },
         section(
           'div',
           { className: 'notification-header' },
@@ -202,78 +226,95 @@ const AlertPage = ({ audienceFilter = null, barangayScope = '' }) => {
           section(
             'div',
             { className: 'notification-filter' },
-            section(
-              'button',
-              {
-                type: 'button',
-                className: 'button button--filter',
-                onClick: () =>
-                  setFilterType(
-                    filterType === 'All Types'
-                      ? 'Information'
-                      : filterType === 'Information'
-                      ? 'Warning'
-                      : filterType === 'Warning'
-                      ? 'Evacuation'
-                      : filterType === 'Evacuation'
-                      ? 'Advisory'
-                      : 'All Types',
-                  ),
+            section('button', {
+              type: 'button',
+              className: 'button button--filter',
+              onClick: () => {
+                setFilterType(
+                  filterType === 'All Types'
+                    ? 'Information'
+                    : filterType === 'Information'
+                    ? 'Warning'
+                    : filterType === 'Warning'
+                    ? 'Evacuation'
+                    : filterType === 'Evacuation'
+                    ? 'Advisory'
+                    : 'All Types',
+                )
+                setNotificationPage(1)
               },
-              filterType,
-            ),
-            section(
-              'button',
-              {
-                type: 'button',
-                className: 'button button--filter',
-                onClick: () =>
-                  setFilterDate(
-                    filterDate === 'All Dates' ? 'Today' : filterDate === 'Today' ? 'This Week' : 'All Dates',
-                  ),
+            }, filterType),
+            section('button', {
+              type: 'button',
+              className: 'button button--filter',
+              onClick: () => {
+                setFilterDate(filterDate === 'All Dates' ? 'Today' : filterDate === 'Today' ? 'This Week' : 'All Dates')
+                setNotificationPage(1)
               },
-              filterDate,
-            ),
+            }, filterDate),
           ),
         ),
-        section(
-          'input',
-          {
-            className: 'notification-search',
-            type: 'search',
-            placeholder: 'Search old notifications...',
-            value: searchQuery,
-            onChange: (event) => setSearchQuery(event.target.value),
+        section('input', {
+          className: 'notification-search',
+          type: 'search',
+          placeholder: 'Search old notifications...',
+          value: searchQuery,
+          onChange: (event) => {
+            setSearchQuery(event.target.value)
+            setNotificationPage(1)
           },
-        ),
+        }),
         section(
           'div',
-          { className: 'notification-list' },
-          filteredNotifications.length === 0
-            ? section('div', { className: 'notification-empty' }, 'No notifications found.')
-            : filteredNotifications.map((notification) =>
-                section(
-                  'div',
-                  { key: notification.id, className: 'notification-item' },
-                  section(
-                    'div',
-                    { className: 'notification-item__header' },
-                    section('strong', null, notification.title),
-                    section('span', { className: 'notification-item__meta' }, `${notification.type} • ${formatDate(notification.createdAt)}`),
-                  ),
-                  section('p', { className: 'notification-item__message' }, notification.message),
-                  section(
-                    'div',
-                    { className: 'notification-item__footer' },
-                    section('button', {
+          { className: 'notification-table-wrap' },
+          section(
+            'table',
+            { className: 'notification-table' },
+            section('thead', null, section('tr', null,
+              section('th', null, 'Title'),
+              section('th', null, 'Type'),
+              section('th', null, 'Date'),
+              section('th', null, 'Message'),
+              canDeleteNotifications && section('th', { className: 'notification-table__action-heading' }, 'Action'),
+            )),
+            section(
+              'tbody',
+              null,
+              visibleNotifications.length === 0
+                ? section('tr', null, section('td', { colSpan: canDeleteNotifications ? 5 : 4, className: 'notification-empty' }, 'No notifications found.'))
+                : visibleNotifications.map((notification) => section('tr', { key: notification.id },
+                    section('td', { className: 'notification-table__title' }, notification.title),
+                    section('td', null, section('span', { className: `notification-type notification-type--${notification.type.toLowerCase()}` }, notification.type)),
+                    section('td', { className: 'notification-table__date' }, formatDate(notification.createdAt)),
+                    section('td', { className: 'notification-table__message' }, notification.message),
+                    canDeleteNotifications && section('td', { className: 'notification-table__action' }, section('button', {
                       className: 'notification-item__delete',
                       type: 'button',
                       onClick: () => handleDismissNotification(notification.id),
                       'aria-label': `Delete ${notification.title} notification`,
-                    }, 'Delete'),
-                  ),
-                ),
-              ),
+                    }, 'Delete')),
+                  )),
+            ),
+          ),
+        ),
+        notificationPageCount > 1 && section(
+          'nav',
+          { className: 'notification-pagination', 'aria-label': 'Notification pages' },
+          Array.from({ length: notificationPageCount }, (_, index) => {
+            const page = index + 1
+            return section(
+              'button',
+              {
+                key: page,
+                type: 'button',
+                className: `notification-page-number${safeNotificationPage === page ? ' is-active' : ''}`,
+                onClick: () => setNotificationPage(page),
+                'aria-label': `View notification page ${page}`,
+                'aria-current': safeNotificationPage === page ? 'page' : undefined,
+              },
+              page,
+            )
+          }),
         ),
       ),
     ),

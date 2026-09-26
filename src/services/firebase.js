@@ -497,7 +497,7 @@ export function subscribeToUserProfile(uid, callback) {
   })
 }
 
-export async function createAnnouncement({ type, audience, priority, title, message, barangay }) {
+export async function createAnnouncement({ channel = "web", type, audience, priority, title, message, barangay }) {
   const user = auth.currentUser
   if (!user) throw new Error("You must be signed in to send an announcement.")
 
@@ -507,6 +507,7 @@ export async function createAnnouncement({ type, audience, priority, title, mess
   }
 
   const announcement = {
+    channel,
     type,
     audience,
     priority,
@@ -522,6 +523,35 @@ export async function createAnnouncement({ type, audience, priority, title, mess
   }
 
   return addDoc(collection(db, "announcements"), announcement)
+}
+
+export function subscribeToTeamChat(callback, onError) {
+  const chatQuery = query(collection(db, "teamChatMessages"), orderBy("createdAt", "asc"))
+  return onSnapshot(chatQuery, (snapshot) => {
+    callback(snapshot.docs.map((chatDoc) => ({ id: chatDoc.id, ...chatDoc.data() })))
+  }, onError)
+}
+
+export async function sendTeamChatMessage(text) {
+  const user = auth.currentUser
+  if (!user) throw new Error("You must be signed in to use team chat.")
+
+  const profile = await getUserProfile(user.uid)
+  if (!profile || !["admin", "staff"].includes(profile.role)) {
+    throw new Error("Only administrators and staff can use team chat.")
+  }
+
+  const trimmedText = text.trim()
+  if (!trimmedText || trimmedText.length > 1000) throw new Error("Message must be between 1 and 1000 characters.")
+
+  return addDoc(collection(db, "teamChatMessages"), {
+    authorUid: user.uid,
+    authorName: profile.name || user.displayName || "Team member",
+    authorRole: profile.role,
+    barangay: profile.barangay || "",
+    text: trimmedText,
+    createdAt: serverTimestamp(),
+  })
 }
 
 // Merges the general audience query with a barangay-scoped query so residents/staff
@@ -598,4 +628,12 @@ export async function dismissCurrentUserAnnouncement(announcementId) {
   await setDoc(doc(db, "users", user.uid, "notificationDismissals", announcementId), {
     createdAt: serverTimestamp(),
   })
+}
+
+export async function deleteAnnouncement(announcementId) {
+  const user = auth.currentUser
+  if (!user) throw new Error("You must be signed in to delete a notification.")
+  const profile = await getUserProfile(user.uid)
+  if (profile?.role !== "admin") throw new Error("Only administrators can delete notifications.")
+  await deleteDoc(doc(db, "announcements", announcementId))
 }

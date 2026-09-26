@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { PhoneCall } from 'lucide-react'
-import { changeCurrentUserPassword, dismissCurrentUserAnnouncement, markCurrentUserNotificationsRead, subscribeToAnnouncements, subscribeToDismissedAnnouncements, subscribeToResidentEvacueeHistory, subscribeToUserProfile } from '../../../services/firebase'
+import { changeCurrentUserPassword, markCurrentUserNotificationsRead, subscribeToAnnouncements, subscribeToResidentEvacueeHistory, subscribeToUserProfile } from '../../../services/firebase'
 import { BARANGAYS } from '../../data/barangays'
 import '../css/section.css'
 
@@ -40,7 +40,6 @@ function UserSection({ page, currentUid }) {
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [message, setMessage] = useState('')
   const [announcements, setAnnouncements] = useState([])
-  const [dismissedAnnouncementIds, setDismissedAnnouncementIds] = useState([])
   const [history, setHistory] = useState([])
   const [historySearch, setHistorySearch] = useState('')
   const [historyStatusFilter, setHistoryStatusFilter] = useState('All')
@@ -62,19 +61,6 @@ function UserSection({ page, currentUid }) {
     })
     return unsubscribe
   }, [page, currentUid])
-
-  useEffect(() => {
-    if (!currentUid) return undefined
-    return subscribeToDismissedAnnouncements(setDismissedAnnouncementIds)
-  }, [currentUid])
-
-  const handleDismissAnnouncement = async (announcementId) => {
-    try {
-      await dismissCurrentUserAnnouncement(announcementId)
-    } catch (error) {
-      console.error('Error deleting notification:', error)
-    }
-  }
 
   useEffect(() => {
     if (page !== 'user-announcement' || !currentUid) return undefined
@@ -280,9 +266,9 @@ function UserSection({ page, currentUid }) {
       {page !== 'user-information' && page !== 'user-id' && (
         page === 'user-announcement' ? (
           <section className="resident-announcements">
-            {announcements.filter((announcement) => !dismissedAnnouncementIds.includes(announcement.id)).length === 0 ? (
+            {announcements.length === 0 ? (
               <p className="resident-announcements__empty">No alert notifications have been published yet.</p>
-            ) : announcements.filter((announcement) => !dismissedAnnouncementIds.includes(announcement.id)).map((announcement) => (
+            ) : announcements.map((announcement) => (
               <article className={`resident-announcement resident-announcement--${announcement.priority || 'medium'}`} key={announcement.id}>
                 <div className="resident-announcement__heading">
                   <div>
@@ -291,7 +277,6 @@ function UserSection({ page, currentUid }) {
                   </div>
                   <div className="resident-announcement__actions">
                     <time>{announcement.createdAt?.toDate ? announcement.createdAt.toDate().toLocaleDateString() : 'Sending...'}</time>
-                    <button type="button" onClick={() => handleDismissAnnouncement(announcement.id)}>Delete</button>
                   </div>
                 </div>
                 <p className="resident-announcement__message">{announcement.message}</p>

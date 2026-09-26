@@ -13,12 +13,12 @@ function getStatus(capacity, availableSlots) {
   return 'Available'
 }
 
-function EvacuationCenterPage() {
+function EvacuationCenterPage({ openAddCenter = false }) {
   const [centers, setCenters] = React.useState([])
   const [search, setSearch] = React.useState('')
   const [barangay, setBarangay] = React.useState('All Barangays')
   const [status, setStatus] = React.useState('All Status')
-  const [isModalOpen, setIsModalOpen] = React.useState(false)
+  const [isModalOpen, setIsModalOpen] = React.useState(openAddCenter)
   const [isSaving, setIsSaving] = React.useState(false)
   const [deletingCenterId, setDeletingCenterId] = React.useState('')
   const [newCenter, setNewCenter] = React.useState({ name: '', barangay: '', location: '', coords: '', capacity: '', imageUrl: '' })

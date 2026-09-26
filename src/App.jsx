@@ -15,6 +15,7 @@ import StaffSidebar from './frontend/staff/js/sidebar.jsx'
 import StaffSection from './frontend/staff/js/section.jsx'
 import UserSidebar from './frontend/user/js/sidebar.jsx'
 import UserSection from './frontend/user/js/section.jsx'
+import TeamChat from './frontend/team-chat.jsx'
 
 function App() {
   const [page, setPage] = useState('login')
@@ -176,11 +177,14 @@ function App() {
       return <RegisterForm onSubmit={handleRegister} onBack={() => setPage('login')} />
     }
     if (page === 'admin-dashboard' || page === 'home' || page === 'dashboard') return <Home navigate={setPage} onLogout={handleLogout} />
+    if (page === 'evacuationcenter-add') return <EvacuationCenterPage openAddCenter />
+    if (page === 'notifications') return <AlertPage notificationsOnly canDeleteNotifications />
     if (page === 'usermanagement') return <UserManagementPage allowedRole="Staff" />
     if (page.startsWith('user-')) return <UserSection page={page} currentUid={currentUid} />
     if (page === 'staff-evacuees') return <EvacManagePage barangay={staffBarangay} />
     if (page === 'staff-usermanagement') return <UserManagementPage allowedRole="User" barangay={staffBarangay} />
     if (page === 'staff-alert') return <AlertPage audienceFilter={['staff', 'evacuees', 'all', 'barangay']} barangayScope={staffBarangay} />
+    if (page === 'staff-notifications') return <AlertPage notificationsOnly audienceFilter={['staff', 'evacuees', 'all', 'barangay']} barangayScope={staffBarangay} />
     if (page === 'staff-evacuation-center') return <EvacuationCenterPage />
     if (page === 'staff-report') return <ReportPage barangay={staffBarangay} />
     if (page === 'staff-settings') return <SettingsPage />
@@ -244,6 +248,7 @@ function App() {
         <Sidebar current={page} navigate={setPage} onLogout={handleLogout} />
       )}
       <main className="main-content">{renderPage()}</main>
+      {(isStaff || (!isStaff && !isUser)) && <TeamChat />}
     </div>
   )
 }
