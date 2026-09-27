@@ -10,6 +10,7 @@ import EvacuationCenterPage from './frontend/admin/js/evacuationcenter.jsx'
 import ReportPage from './frontend/admin/js/report.jsx'
 import SettingsPage from './frontend/admin/js/settings.jsx'
 import UserManagementPage from './frontend/admin/js/usermanagement.js'
+import FloodPronePage from './frontend/admin/js/flood-prone.jsx'
 import { registerWithEmailPassword, signInWithEmailPassword, signOutUser, onAuthStateChanged, signInWithGoogle, getUserProfile, setCurrentStaffStatus, subscribeToUserProfile } from './services/firebase.js'
 import StaffSidebar from './frontend/staff/js/sidebar.jsx'
 import StaffSection from './frontend/staff/js/section.jsx'
@@ -177,6 +178,7 @@ function App() {
       return <RegisterForm onSubmit={handleRegister} onBack={() => setPage('login')} />
     }
     if (page === 'admin-dashboard' || page === 'home' || page === 'dashboard') return <Home navigate={setPage} onLogout={handleLogout} />
+    if (page === 'flood-prone') return <FloodPronePage />
     if (page === 'evacuationcenter-add') return <EvacuationCenterPage openAddCenter />
     if (page === 'notifications') return <AlertPage notificationsOnly canDeleteNotifications />
     if (page === 'usermanagement') return <UserManagementPage allowedRole="Staff" />

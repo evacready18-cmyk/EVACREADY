@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Bell, History, IdCard, Menu, PhoneCall, UserRound } from 'lucide-react'
+import { AlertTriangle, Bell, History, IdCard, Menu, PhoneCall, UserRound } from 'lucide-react'
 import '../css/sidebar.css'
-import { subscribeToAnnouncements, subscribeToDismissedAnnouncements, subscribeToUserProfile } from '../../../services/firebase'
+import { subscribeToAnnouncements, subscribeToDismissedAnnouncements, subscribeToFloodProneStatus, subscribeToUserProfile } from '../../../services/firebase'
 
 const userLinks = [
   { text: 'My Profile', page: 'user-information', Icon: UserRound },
@@ -13,6 +13,7 @@ const userLinks = [
 
 function UserSidebar({ current, currentUid, navigate, onLogout, isVerified }) {
   const [profile, setProfile] = useState(null)
+  const [floodProneBarangay, setFloodProneBarangay] = useState('')
   const [unreadCount, setUnreadCount] = useState(0)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [dismissedNotificationIds, setDismissedNotificationIds] = useState([])
@@ -34,6 +35,14 @@ function UserSidebar({ current, currentUid, navigate, onLogout, isVerified }) {
     if (!currentUid) return undefined
     return subscribeToUserProfile(currentUid, setProfile)
   }, [currentUid])
+
+  useEffect(() => {
+    const barangay = profile?.barangay
+    if (!barangay) return undefined
+    return subscribeToFloodProneStatus(barangay, (isFloodProne) => {
+      setFloodProneBarangay(isFloodProne ? barangay : '')
+    })
+  }, [profile?.barangay])
 
   useEffect(() => {
     if (!profile) return undefined
@@ -78,6 +87,12 @@ function UserSidebar({ current, currentUid, navigate, onLogout, isVerified }) {
           <UserRound aria-hidden="true" size={20} strokeWidth={2.5} />
         </button>
       </div>
+      {profile?.barangay && floodProneBarangay === profile.barangay && (
+        <div className="user-sidebar__flood-indicator" role="status">
+          <AlertTriangle aria-hidden="true" size={20} />
+          <span><strong>FLOOD-PRONE AREA</strong><small>{profile.barangay}</small></span>
+        </div>
+      )}
       <div className="user-sidebar__panel">
         <nav className="user-sidebar__nav" aria-label="Resident navigation">
           {userLinks.filter((link) => isVerified || link.page === 'user-information').map((link) => (

@@ -294,6 +294,11 @@
 @media (max-width: 600px) {
 	.metric-row { grid-template-columns: 1fr; }
 	.report-controls { flex-direction: column; align-items: stretch; }
+	.reports-page { padding: 16px 0; }
+	.reports-header { flex-direction: column; align-items: stretch; }
+	.report-controls input[type="search"] { min-width: 0; width: 100%; }
+	.report-table-wrap { overflow-x: auto; }
+	.report-table-wrap table { min-width: 760px; }
 }
 
 @media print {

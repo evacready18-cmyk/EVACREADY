@@ -272,7 +272,7 @@ function UserSection({ page, currentUid }) {
               <article className={`resident-announcement resident-announcement--${announcement.priority || 'medium'}`} key={announcement.id}>
                 <div className="resident-announcement__heading">
                   <div>
-                    <p>{announcement.type || 'Information'} · {announcement.audience === 'evacuees' ? 'Evacuees' : 'All residents'}</p>
+                    <p>{announcement.type || 'Information'} · {announcement.audience === 'evacuees' ? 'Evacuees' : announcement.audience === 'barangay' ? announcement.barangay : 'All residents'}</p>
                     <h2>{announcement.title}</h2>
                   </div>
                   <div className="resident-announcement__actions">

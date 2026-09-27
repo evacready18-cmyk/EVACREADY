@@ -219,7 +219,7 @@
 
 .alert-form__grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -317,6 +317,7 @@
   background: #fee2e2;
   color: #991b1b;
 }
+
 
 .notification-panel {
   display: flex;
@@ -615,6 +616,16 @@
 }
 
 @media (max-width: 700px) {
+  .notification-table-wrap,
+  .sms-alert-table-wrap {
+    overflow-x: auto;
+  }
+
+  .notification-table,
+  .sms-alert-table {
+    min-width: 640px;
+  }
+
   .notification-table th,
   .notification-table td {
     padding: 11px 12px;

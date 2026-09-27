@@ -138,3 +138,28 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 640px) {
+  .modal-overlay {
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .modal-content {
+    max-height: calc(100dvh - 24px);
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  .image-preview-wrapper {
+    min-height: 180px;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .modal-actions .button {
+    width: 100%;
+  }
+}

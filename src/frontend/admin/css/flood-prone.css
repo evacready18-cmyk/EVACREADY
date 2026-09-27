@@ -1,0 +1,283 @@
+.flood-prone-page {
+  display: grid;
+  gap: 24px;
+  max-width: 920px;
+  margin: 0 auto;
+  color: #1f2937;
+}
+
+.flood-prone-page__header h1 {
+  margin: 0;
+  color: #111827;
+  font-size: 30px;
+  line-height: 1.2;
+}
+
+.flood-prone-page__eyebrow {
+  margin-bottom: 8px;
+  color: #b45309;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.flood-prone-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 1.6fr) auto;
+  align-items: end;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.flood-prone-add label,
+.flood-threat-dialog > label {
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.flood-prone-add select,
+.flood-threat-dialog textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #111827;
+  background: #ffffff;
+  font: inherit;
+}
+
+.flood-prone-add button,
+.flood-prone-threat,
+.flood-threat-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 6px;
+  color: #ffffff;
+  background: #b45309;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.flood-prone-add button:disabled,
+.flood-prone-threat:disabled,
+.flood-prone-remove:disabled,
+.flood-threat-dialog button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.flood-prone-list {
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.flood-prone-list__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.flood-prone-list__heading h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 18px;
+}
+
+.flood-prone-list__heading > span {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 50%;
+  color: #92400e;
+  background: #fef3c7;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.flood-prone-list ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.flood-prone-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 62px;
+  padding: 10px 20px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.flood-prone-list li:last-child {
+  border-bottom: 0;
+}
+
+.flood-prone-list__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.flood-prone-threat {
+  background: #b91c1c;
+}
+
+.flood-prone-remove,
+.flood-threat-dialog header > button {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #475569;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.flood-prone-feedback,
+.flood-prone-list__empty {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 6px;
+  color: #166534;
+  background: #dcfce7;
+}
+
+.flood-prone-feedback.is-error {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.flood-prone-list__empty {
+  margin: 16px;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.flood-threat-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.62);
+}
+
+.flood-threat-dialog {
+  display: grid;
+  gap: 16px;
+  width: min(520px, 100%);
+  box-sizing: border-box;
+  padding: 22px;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.24);
+}
+
+.flood-threat-dialog header,
+.flood-threat-dialog footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.flood-threat-dialog header p {
+  margin: 0 0 6px;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.flood-threat-dialog header h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 20px;
+}
+
+.flood-threat-dialog textarea {
+  resize: vertical;
+}
+
+.flood-threat-dialog footer {
+  justify-content: flex-end;
+}
+
+.flood-threat-cancel {
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #334155;
+  background: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.flood-threat-send {
+  background: #b91c1c;
+}
+
+@media (max-width: 640px) {
+  .flood-prone-page {
+    gap: 16px;
+  }
+
+  .flood-prone-page__header h1 {
+    font-size: 25px;
+  }
+
+  .flood-prone-add {
+    grid-template-columns: 1fr;
+  }
+
+  .flood-prone-add button {
+    width: 100%;
+  }
+
+  .flood-prone-list li {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .flood-prone-list__actions {
+    width: 100%;
+  }
+
+  .flood-prone-threat {
+    flex: 1;
+  }
+
+  .flood-threat-dialog {
+    padding: 18px;
+  }
+
+  .flood-threat-dialog footer > button {
+    flex: 1;
+  }
+}

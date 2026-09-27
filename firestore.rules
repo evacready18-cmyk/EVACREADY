@@ -88,6 +88,13 @@ service cloud.firestore {
         (data.audience == 'barangay') == ('barangay' in data) &&
         (!('barangay' in data) || (data.barangay is string && data.barangay.size() > 0 && data.barangay.size() <= 80));
     }
+    function isValidFloodProneBarangay(data) {
+      return data.keys().hasOnly(['barangay', 'updatedBy', 'updatedAt']) &&
+        data.keys().hasAll(['barangay', 'updatedBy', 'updatedAt']) &&
+        data.barangay is string && data.barangay.size() > 0 && data.barangay.size() <= 80 &&
+        data.updatedBy == request.auth.uid &&
+        data.updatedAt is timestamp && data.updatedAt == request.time;
+    }
     function isValidCheckIn(centerId, data) {
       return data.keys().hasOnly(['residentUid', 'residentName', 'phone', 'barangay', 'barangayKey', 'centerName', 'historyId', 'checkedInAt']) &&
         data.keys().hasAll(['residentUid', 'residentName', 'phone', 'barangay', 'barangayKey', 'centerName', 'historyId', 'checkedInAt']) &&
@@ -228,6 +235,14 @@ service cloud.firestore {
           callerProfile().barangay.lower().trim() == resource.data.barangay.lower().trim());
       allow create: if isCenterManager() && isValidAnnouncement(request.resource.data) &&
         (request.resource.data.audience != 'barangay' || isAdmin() || isStaffForBarangay(request.resource.data.barangay));
+      allow delete: if isAdmin();
+    }
+
+    match /floodProneBarangays/{barangayId} {
+      allow get: if isAdmin() ||
+        (isResident() && resource.data.barangay.lower().trim() == callerProfile().barangay.lower().trim());
+      allow list: if isAdmin();
+      allow create, update: if isAdmin() && isValidFloodProneBarangay(request.resource.data);
       allow delete: if isAdmin();
     }
 

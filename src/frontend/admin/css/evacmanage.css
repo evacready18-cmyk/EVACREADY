@@ -363,6 +363,14 @@
 }
 
 @media (max-width: 768px) {
+  .evacuees-card {
+    overflow-x: auto;
+  }
+
+  .detail-table {
+    min-width: 760px;
+  }
+
   .summary-table th,
   .summary-table td,
   .detail-table th,
@@ -377,6 +385,17 @@
   .detail-controls {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .qr-scanner-overlay {
+    padding: 12px;
+  }
+
+  .qr-scanner-modal {
+    width: 100%;
+    max-height: calc(100dvh - 24px);
+    padding: 18px;
+    overflow-y: auto;
   }
 }
 

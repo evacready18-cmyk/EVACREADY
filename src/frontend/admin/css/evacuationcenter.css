@@ -331,3 +331,41 @@
     min-width: 100%;
   }
 }
+
+@media (max-width: 640px) {
+  .evacuation-center-page {
+    padding: 16px 0;
+    gap: 16px;
+  }
+
+  .page-title-section h1 {
+    font-size: 24px;
+  }
+
+  .add-center-btn {
+    width: 100%;
+  }
+
+  .filter-toolbar {
+    padding: 14px;
+  }
+
+  .filter-group,
+  .filter-group select {
+    width: 100%;
+  }
+
+  .filter-search {
+    box-sizing: border-box;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .evacuation-table-card {
+    overflow-x: auto;
+  }
+
+  .evacuation-table {
+    min-width: 760px;
+  }
+}

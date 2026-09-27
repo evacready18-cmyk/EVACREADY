@@ -1,36 +1,51 @@
 .sidebar {
   position: fixed;
+  z-index: 30;
   top: 0;
   left: 0;
   width: 260px;
   height: 100vh;
+  box-sizing: border-box;
+  overflow: hidden;
   background: linear-gradient(180deg, #1e40af 0%, #2563eb 100%);
   color: white;
-  padding: 32px 24px;
+  padding: 24px 20px;
   box-shadow: 4px 0 30px rgba(15, 23, 42, 0.1);
   display: flex;
   flex-direction: column;
+}
+
+.sidebar-topbar {
+  flex: 0 0 auto;
+  margin-bottom: 18px;
+}
+
+.sidebar-menu-toggle {
+  display: none;
 }
 
 .sidebar-brand {
   font-size: 28px;
   font-weight: 700;
   letter-spacing: 1px;
-  margin-bottom: 36px;
+  margin: 0;
 }
 
 .sidebar-nav {
   display: flex;
+  flex: 1 1 auto;
+  min-height: max-content;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
 }
 
 .sidebar-link {
+  flex: 0 0 auto;
   color: rgba(255, 255, 255, 0.85);
   text-decoration: none;
-  font-size: 15px;
-  padding: 14px 18px;
-  border-radius: 16px;
+  font-size: 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
   transition: background 0.2s ease, color 0.2s ease;
 }
 
@@ -41,10 +56,11 @@
 }
 
 .sidebar-logout {
-  margin-top: auto;
-  padding: 14px 18px;
+  flex: 0 0 auto;
+  margin-top: 12px;
+  padding: 10px 14px;
   border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 16px;
+  border-radius: 10px;
   color: #ffffff;
   background: transparent;
   font: inherit;
@@ -55,4 +71,107 @@
 
 .sidebar-logout:hover {
   background: rgba(255, 255, 255, 0.12);
+}
+
+@media (max-width: 640px) {
+  .sidebar {
+    position: sticky;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    max-height: 100dvh;
+    padding: 12px 16px;
+    overflow: visible;
+  }
+
+  .sidebar-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+    margin-bottom: 0;
+  }
+
+  .sidebar-menu-toggle {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border: 0;
+    border-radius: 8px;
+    color: #ffffff;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .sidebar-menu-toggle:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .sidebar-brand {
+    font-size: 21px;
+  }
+
+  .sidebar-nav {
+    display: none;
+    flex: 0 0 auto;
+    min-height: 0;
+    margin-top: 12px;
+    gap: 6px;
+  }
+
+  .sidebar--open .sidebar-nav {
+    display: flex;
+  }
+
+  .sidebar--open {
+    max-height: none;
+  }
+
+  .sidebar-link {
+    padding: 11px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+
+  .sidebar-logout {
+    display: none;
+    margin-top: 10px;
+    padding: 11px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+
+  .sidebar--open .sidebar-logout {
+    display: block;
+  }
+}
+
+@media (max-height: 700px) and (min-width: 641px) {
+  .sidebar {
+    padding-top: 18px;
+    padding-bottom: 18px;
+  }
+
+  .sidebar-topbar {
+    margin-bottom: 12px;
+  }
+
+  .sidebar-brand {
+    font-size: 24px;
+  }
+
+  .sidebar-nav {
+    gap: 5px;
+  }
+
+  .sidebar-link {
+    padding: 7px 12px;
+    font-size: 13px;
+  }
+
+  .sidebar-logout {
+    margin-top: 8px;
+    padding: 8px 12px;
+  }
 }

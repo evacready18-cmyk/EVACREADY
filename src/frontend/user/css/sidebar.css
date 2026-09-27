@@ -27,6 +27,32 @@
   letter-spacing: 1px;
 }
 
+.user-sidebar__flood-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: -18px 0 24px;
+  padding: 11px 12px;
+  border-left: 4px solid #fecaca;
+  border-radius: 6px;
+  color: #ffffff;
+  background: #991b1b;
+}
+
+.user-sidebar__flood-indicator span {
+  display: grid;
+  gap: 2px;
+}
+
+.user-sidebar__flood-indicator strong {
+  font-size: 12px;
+}
+
+.user-sidebar__flood-indicator small {
+  color: #fee2e2;
+  font-size: 12px;
+}
+
 .user-sidebar__menu-toggle,
 .user-sidebar__profile-shortcut {
   display: none;
@@ -153,6 +179,10 @@
   .user-sidebar__topbar {
     justify-content: space-between;
     margin-bottom: 0;
+  }
+
+  .user-sidebar__flood-indicator {
+    margin: 12px 0 0;
   }
 
   .user-sidebar__brand {

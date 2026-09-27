@@ -432,6 +432,10 @@ function normalizeBarangay(value) {
     .replace(/\s+/g, " ")
 }
 
+function floodProneBarangayDocumentId(value) {
+  return normalizeBarangay(value).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+}
+
 // Live-subscribes to the "users" collection, optionally filtered by role and/or barangay.
 // Both are compared client-side (trimmed, case-insensitive) since manually edited
 // records can differ in casing/whitespace from the dropdown-selected/registered value.
@@ -452,6 +456,43 @@ export function subscribeToUsers({ role, barangay } = {}, callback) {
     console.error("Error subscribing to users:", error)
     callback([])
   })
+}
+
+export function subscribeToFloodProneBarangays(callback, onError = () => {}) {
+  return onSnapshot(collection(db, "floodProneBarangays"), (snapshot) => {
+    const barangays = snapshot.docs.map((barangayDoc) => ({ id: barangayDoc.id, ...barangayDoc.data() }))
+    barangays.sort((first, second) => first.barangay.localeCompare(second.barangay))
+    callback(barangays)
+  }, onError)
+}
+
+export function subscribeToFloodProneStatus(barangay, callback) {
+  const barangayRef = doc(db, "floodProneBarangays", floodProneBarangayDocumentId(barangay))
+  return onSnapshot(barangayRef, (snapshot) => {
+    callback(snapshot.exists() && normalizeBarangay(snapshot.data().barangay) === normalizeBarangay(barangay))
+  }, (error) => {
+    console.error("Error subscribing to flood-prone status:", error)
+    callback(false)
+  })
+}
+
+export async function setFloodProneBarangay(barangay, isFloodProne) {
+  const user = auth.currentUser
+  if (!user) throw new Error("You must be signed in to manage flood-prone barangays.")
+
+  const profile = await getUserProfile(user.uid)
+  if (profile?.role !== "admin") throw new Error("Only administrators can manage flood-prone barangays.")
+
+  const barangayRef = doc(db, "floodProneBarangays", floodProneBarangayDocumentId(barangay))
+  if (isFloodProne) {
+    await setDoc(barangayRef, {
+      barangay: barangay.trim(),
+      updatedBy: user.uid,
+      updatedAt: serverTimestamp(),
+    })
+  } else {
+    await deleteDoc(barangayRef)
+  }
 }
 
 export async function updateUserProfileFields(uid, updates) {
@@ -523,6 +564,14 @@ export async function createAnnouncement({ channel = "web", type, audience, prio
   }
 
   return addDoc(collection(db, "announcements"), announcement)
+}
+
+export function subscribeToAnnouncementSmsDelivery(announcementId, callback) {
+  return onSnapshot(doc(db, "announcements", announcementId), (snapshot) => {
+    callback(snapshot.exists() ? snapshot.data().smsDelivery || null : null)
+  }, (error) => {
+    callback({ status: "error", error: error.message })
+  })
 }
 
 export function subscribeToTeamChat(callback, onError) {

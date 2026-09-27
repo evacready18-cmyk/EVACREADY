@@ -60,6 +60,17 @@
 }
 
 @media (max-width: 640px) {
+  .app-shell:not(.staff-shell):not(.user-shell) {
+    display: block;
+  }
+
+  .app-shell:not(.staff-shell):not(.user-shell) .main-content {
+    width: 100%;
+    min-width: 0;
+    margin-left: 0;
+    padding: 16px;
+  }
+
   .staff-shell,
   .user-shell {
     display: block;
@@ -69,6 +80,17 @@
   .user-shell .main-content {
     margin-left: 0;
     padding: 16px;
+  }
+
+  .staff-shell .main-content {
+    width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  .staff-shell .main-content > * {
+    max-width: 100%;
+    min-width: 0;
   }
 }
 

@@ -1,4 +1,5 @@
 ﻿import React from 'react'
+import { Building2, FileText, MapPin, Megaphone, TriangleAlert, UsersRound } from 'lucide-react'
 import '../css/home.css'
 import { subscribeToActiveEvacuees, subscribeToAnnouncements, subscribeToEvacuationCenters } from '../../../services/firebase.js'
 
@@ -76,28 +77,28 @@ function Home({ navigate, onLogout, role = 'admin' }) {
         { className: 'stat-card stat-card--danger' },
         section('div', { className: 'stat-card__label' }, 'Affected Barangays'),
         section('div', { className: 'stat-card__value' }, affectedBarangays),
-        section('span', { className: 'stat-card__icon' }, '📍'),
+        section('span', { className: 'stat-card__icon' }, section(MapPin, { size: 28, strokeWidth: 2, 'aria-hidden': true })),
       ),
       section(
         'article',
         { className: 'stat-card stat-card--alert' },
         section('div', { className: 'stat-card__label' }, 'Active Alerts'),
         section('div', { className: 'stat-card__value' }, alerts.length),
-        section('span', { className: 'stat-card__icon' }, '❗'),
+        section('span', { className: 'stat-card__icon' }, section(TriangleAlert, { size: 28, strokeWidth: 2, 'aria-hidden': true })),
       ),
       section(
         'article',
         { className: 'stat-card stat-card--info' },
         section('div', { className: 'stat-card__label' }, 'Evacuees'),
         section('div', { className: 'stat-card__value' }, activeEvacuees.length),
-        section('span', { className: 'stat-card__icon' }, '👥'),
+        section('span', { className: 'stat-card__icon' }, section(UsersRound, { size: 28, strokeWidth: 2, 'aria-hidden': true })),
       ),
       section(
         'article',
         { className: 'stat-card stat-card--success' },
         section('div', { className: 'stat-card__label' }, 'Available Evacuation Centers'),
         section('div', { className: 'stat-card__value' }, availableCenters),
-        section('span', { className: 'stat-card__icon' }, '🏠'),
+        section('span', { className: 'stat-card__icon' }, section(Building2, { size: 28, strokeWidth: 2, 'aria-hidden': true })),
       ),
     ),
     section(
@@ -153,25 +154,25 @@ function Home({ navigate, onLogout, role = 'admin' }) {
           section(
             'button',
             { className: 'action-card action-card--alert', type: 'button', onClick: () => navigate('alert') },
-            section('span', null, '📣'),
+            section('span', { className: 'action-card__icon' }, section(Megaphone, { size: 24, strokeWidth: 2, 'aria-hidden': true })),
             section('strong', null, 'Create Alert'),
           ),
           section(
             'button',
             { className: 'action-card action-card--center', type: 'button', onClick: () => navigate('evacuationcenter-add') },
-            section('span', null, '🏠'),
+            section('span', { className: 'action-card__icon' }, section(Building2, { size: 24, strokeWidth: 2, 'aria-hidden': true })),
             section('strong', null, 'Open Evacuation Center'),
           ),
           section(
             'button',
             { className: 'action-card action-card--evacuees', type: 'button', onClick: () => navigate('evacmanage') },
-            section('span', null, '👥'),
+            section('span', { className: 'action-card__icon' }, section(UsersRound, { size: 24, strokeWidth: 2, 'aria-hidden': true })),
             section('strong', null, 'Evacuees List'),
           ),
           section(
             'button',
             { className: 'action-card action-card--report', type: 'button', onClick: () => navigate('report') },
-            section('span', null, '📝'),
+            section('span', { className: 'action-card__icon' }, section(FileText, { size: 24, strokeWidth: 2, 'aria-hidden': true })),
             section('strong', null, 'Generate Report'),
           ),
         ),

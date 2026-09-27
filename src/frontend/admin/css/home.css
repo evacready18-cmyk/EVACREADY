@@ -80,7 +80,9 @@
 }
 
 .stat-card__icon {
-  font-size: 28px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
 }
 
 .stat-card--danger {
@@ -314,8 +316,10 @@
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
 }
 
-.action-card span {
-  font-size: 20px;
+.action-card__icon {
+  display: grid;
+  min-height: 24px;
+  place-items: center;
 }
 
 .action-card strong {

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Menu } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import '../css/sidebar.css'
 
 const staffLinks = [
@@ -30,7 +30,7 @@ function StaffSidebar({ current, navigate, onLogout }) {
           aria-expanded={isMenuOpen}
           onClick={() => setIsMenuOpen((open) => !open)}
         >
-          <Menu aria-hidden="true" size={22} strokeWidth={2.5} />
+          {isMenuOpen ? <X aria-hidden="true" size={22} strokeWidth={2.5} /> : <Menu aria-hidden="true" size={22} strokeWidth={2.5} />}
         </button>
         <span className="staff-sidebar__brand">EVACREADY</span>
       </div>

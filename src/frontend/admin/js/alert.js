@@ -6,7 +6,6 @@ const section = React.createElement
 
 const AlertPage = ({ audienceFilter = null, barangayScope = '', notificationsOnly = false, canDeleteNotifications = false }) => {
   const [alertType, setAlertType] = useState('Information')
-  const [channel, setChannel] = useState('sms')
   const [audience, setAudience] = useState('all')
   const [priority, setPriority] = useState('medium')
   const [title, setTitle] = useState('')
@@ -28,7 +27,6 @@ const AlertPage = ({ audienceFilter = null, barangayScope = '', notificationsOnl
     if (!notificationsOnly) return undefined
     return subscribeToDismissedAnnouncements(setDismissedNotificationIds)
   }, [notificationsOnly])
-
   const formatDate = (createdAt) => createdAt?.toDate
     ? createdAt.toDate().toISOString().split('T')[0]
     : 'Sending...'
@@ -74,10 +72,9 @@ const AlertPage = ({ audienceFilter = null, barangayScope = '', notificationsOnl
       setStatus({ type: 'error', text: 'Please enter both a title and a message.' })
       return
     }
-
     try {
-      await createAnnouncement({ channel, type: alertType, audience, priority, title, message, barangay: audience === 'barangay' ? barangayScope : undefined })
-      setStatus({ type: 'success', text: `${channel === 'sms' ? 'SMS' : 'Web'} alert sent successfully!` })
+      await createAnnouncement({ channel: 'web', type: alertType, audience, priority, title, message, barangay: audience === 'barangay' ? barangayScope : undefined })
+      setStatus({ type: 'success', text: 'Web alert published successfully.' })
       setTitle('')
       setMessage('')
     } catch (error) {
@@ -88,7 +85,6 @@ const AlertPage = ({ audienceFilter = null, barangayScope = '', notificationsOnl
   const handleCancel = (event) => {
     event.preventDefault()
     setAlertType('Information')
-    setChannel('sms')
     setAudience('all')
     setPriority('medium')
     setTitle('')
@@ -102,8 +98,8 @@ const AlertPage = ({ audienceFilter = null, barangayScope = '', notificationsOnl
       section(
         'div',
         { className: 'page-header' },
-        section('h1', null, notificationsOnly ? 'System Notification' : `Create Alert for ${channel === 'sms' ? 'SMS' : 'Web'}`),
-        section('p', null, notificationsOnly ? 'Review and manage recent system notifications.' : `Choose an alert type, target audience, priority, and compose your ${channel === 'sms' ? 'SMS' : 'Web'} alert.`),
+        section('h1', null, notificationsOnly ? 'System Notification' : 'Create Web Alert'),
+        section('p', null, notificationsOnly ? 'Review and manage recent system notifications.' : 'Choose an alert type and target audience, then compose your web alert.'),
       ),
     status &&
       section(
@@ -152,21 +148,6 @@ const AlertPage = ({ audienceFilter = null, barangayScope = '', notificationsOnl
               section('option', { value: 'staff' }, 'Staff'),
               section('option', { value: 'all' }, 'All Residents'),
               barangayScope && section('option', { value: 'barangay' }, `My Barangay (${barangayScope})`),
-            ),
-          ),
-          section(
-            'div',
-            { className: 'form-group' },
-            section('label', { htmlFor: 'alert-channel' }, 'Delivery Channel'),
-            section(
-              'select',
-              {
-                id: 'alert-channel',
-                value: channel,
-                onChange: (event) => setChannel(event.target.value),
-              },
-              section('option', { value: 'sms' }, 'SMS'),
-              section('option', { value: 'web' }, 'Web'),
             ),
           ),
           section(
