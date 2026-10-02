@@ -6,7 +6,7 @@ const section = React.createElement
 
 const AlertPage = ({ audienceFilter = null, barangayScope = '', notificationsOnly = false, canDeleteNotifications = false }) => {
   const [alertType, setAlertType] = useState('Information')
-  const [audience, setAudience] = useState('all')
+  const [audience, setAudience] = useState(audienceFilter ? 'barangay' : 'all')
   const [priority, setPriority] = useState('medium')
   const [title, setTitle] = useState('')
   const [message, setMessage] = useState('')
@@ -72,9 +72,13 @@ const AlertPage = ({ audienceFilter = null, barangayScope = '', notificationsOnl
       setStatus({ type: 'error', text: 'Please enter both a title and a message.' })
       return
     }
+    if (audienceFilter && (audience !== 'barangay' || !barangayScope)) {
+      setStatus({ type: 'error', text: 'Staff alerts can only target the assigned barangay.' })
+      return
+    }
     try {
       await createAnnouncement({ channel: 'web', type: alertType, audience, priority, title, message, barangay: audience === 'barangay' ? barangayScope : undefined })
-      setStatus({ type: 'success', text: 'Web alert published successfully.' })
+      setStatus({ type: 'success', text: audience === 'barangay' ? `Web alert published to ${barangayScope}.` : 'Web alert published successfully.' })
       setTitle('')
       setMessage('')
     } catch (error) {
@@ -85,7 +89,7 @@ const AlertPage = ({ audienceFilter = null, barangayScope = '', notificationsOnl
   const handleCancel = (event) => {
     event.preventDefault()
     setAlertType('Information')
-    setAudience('all')
+    setAudience(audienceFilter ? 'barangay' : 'all')
     setPriority('medium')
     setTitle('')
     setMessage('')
@@ -144,10 +148,13 @@ const AlertPage = ({ audienceFilter = null, barangayScope = '', notificationsOnl
                 value: audience,
                 onChange: (event) => setAudience(event.target.value),
               },
-              section('option', { value: 'evacuees' }, 'Evacuees'),
-              section('option', { value: 'staff' }, 'Staff'),
-              section('option', { value: 'all' }, 'All Residents'),
-              barangayScope && section('option', { value: 'barangay' }, `My Barangay (${barangayScope})`),
+              audienceFilter
+                ? section('option', { value: 'barangay' }, barangayScope ? `My Barangay (${barangayScope})` : 'My Barangay')
+                : [
+                    section('option', { key: 'evacuees', value: 'evacuees' }, 'Evacuees'),
+                    section('option', { key: 'staff', value: 'staff' }, 'Staff'),
+                    section('option', { key: 'all', value: 'all' }, 'All Residents'),
+                  ],
             ),
           ),
           section(

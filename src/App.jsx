@@ -18,12 +18,37 @@ import UserSidebar from './frontend/user/js/sidebar.jsx'
 import UserSection from './frontend/user/js/section.jsx'
 import TeamChat from './frontend/team-chat.jsx'
 
+const ADMIN_PAGES = new Set([
+  'admin-dashboard', 'home', 'dashboard', 'flood-prone', 'evacuationcenter-add',
+  'notifications', 'usermanagement', 'alert', 'evacmanage', 'evacuationcenter',
+  'report', 'settings',
+])
+
 function App() {
   const [page, setPage] = useState('login')
   const [isInitializing, setIsInitializing] = useState(true)
   const [staffBarangay, setStaffBarangay] = useState('')
   const [currentUid, setCurrentUid] = useState('')
   const [isResidentVerified, setIsResidentVerified] = useState(false)
+
+  const getAdminPage = (uid) => {
+    try {
+      const savedPage = window.localStorage.getItem(`evacready-admin-page:${uid}`)
+      return ADMIN_PAGES.has(savedPage) ? savedPage : 'admin-dashboard'
+    } catch {
+      return 'admin-dashboard'
+    }
+  }
+
+  useEffect(() => {
+    if (!isInitializing && currentUid && ADMIN_PAGES.has(page)) {
+      try {
+        window.localStorage.setItem(`evacready-admin-page:${currentUid}`, page)
+      } catch {
+        // Keep navigation functional when browser storage is unavailable.
+      }
+    }
+  }, [currentUid, isInitializing, page])
 
   useEffect(() => {
     try {
@@ -82,7 +107,7 @@ function App() {
         resolveRoleAndBarangay(user.uid, user.email).then(({ role, barangay, verified }) => {
           setIsResidentVerified(verified)
           if (role === 'staff') setStaffBarangay(barangay)
-          setPage(role === 'staff' ? 'staff-evacuees' : role === 'user' ? 'user-information' : `${role}-dashboard`)
+          setPage(role === 'staff' ? 'staff-evacuees' : role === 'user' ? 'user-information' : getAdminPage(user.uid))
           setIsInitializing(false)
         })
       } else {
@@ -103,7 +128,7 @@ function App() {
       const { role, barangay, verified } = await resolveRoleAndBarangay(user.uid, email)
       setIsResidentVerified(verified)
       if (role === 'staff') setStaffBarangay(barangay)
-      setPage(role === 'staff' ? 'staff-evacuees' : role === 'user' ? 'user-information' : `${role}-dashboard`)
+      setPage(role === 'staff' ? 'staff-evacuees' : role === 'user' ? 'user-information' : getAdminPage(user.uid))
     } catch (error) {
       alert(error.message)
     }
@@ -139,7 +164,7 @@ function App() {
       const { role, barangay, verified } = await resolveRoleAndBarangay(user.uid, email)
       setIsResidentVerified(verified)
       if (role === 'staff') setStaffBarangay(barangay)
-      setPage(role === 'staff' ? 'staff-evacuees' : role === 'user' ? 'user-information' : `${role}-dashboard`)
+      setPage(role === 'staff' ? 'staff-evacuees' : role === 'user' ? 'user-information' : getAdminPage(user.uid))
     } catch (error) {
       if (error.code === 'auth/popup-closed-by-user') {
         // User closed the popup, do nothing

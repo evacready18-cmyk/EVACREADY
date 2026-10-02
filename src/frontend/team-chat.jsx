@@ -1,12 +1,14 @@
 import React from 'react'
+import { Trash2 } from 'lucide-react'
 import './team-chat.css'
-import { getCurrentUser, getUserProfile, sendTeamChatMessage, subscribeToTeamChat } from '../services/firebase.js'
+import { deleteTeamChatMessage, getCurrentUser, getUserProfile, sendTeamChatMessage, subscribeToTeamChat } from '../services/firebase.js'
 
 function TeamChat() {
   const [messages, setMessages] = React.useState([])
   const [message, setMessage] = React.useState('')
   const [profile, setProfile] = React.useState(null)
   const [isSending, setIsSending] = React.useState(false)
+  const [deletingMessageId, setDeletingMessageId] = React.useState('')
   const [error, setError] = React.useState('')
   const [isOpen, setIsOpen] = React.useState(false)
 
@@ -32,6 +34,19 @@ function TeamChat() {
     }
   }
 
+  const handleDeleteMessage = async (messageId) => {
+    if (!window.confirm('Delete this message?')) return
+    setDeletingMessageId(messageId)
+    setError('')
+    try {
+      await deleteTeamChatMessage(messageId)
+    } catch (chatError) {
+      setError(chatError.message || 'Unable to delete message.')
+    } finally {
+      setDeletingMessageId('')
+    }
+  }
+
   return (
     <div className={`team-chat-widget${isOpen ? ' team-chat-widget--open' : ''}`}>
       {isOpen && (
@@ -52,6 +67,11 @@ function TeamChat() {
                 <div className="team-chat-message__meta">
                   <strong>{chatMessage.authorName || 'Team member'}</strong>
                   <span>{chatMessage.authorRole === 'admin' ? 'Admin' : `Staff${chatMessage.barangay ? ` · ${chatMessage.barangay}` : ''}`}</span>
+                  {chatMessage.authorUid === profile?.uid && (
+                    <button className="team-chat-message__delete" type="button" onClick={() => handleDeleteMessage(chatMessage.id)} disabled={deletingMessageId === chatMessage.id} aria-label="Delete your message" title="Delete message">
+                      <Trash2 size={14} aria-hidden="true" />
+                    </button>
+                  )}
                 </div>
                 <p>{chatMessage.text}</p>
                 <time>{chatMessage.createdAt?.toDate ? chatMessage.createdAt.toDate().toLocaleString() : 'Sending...'}</time>

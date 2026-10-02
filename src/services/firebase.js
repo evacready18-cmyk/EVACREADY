@@ -432,8 +432,53 @@ function normalizeBarangay(value) {
     .replace(/\s+/g, " ")
 }
 
-function floodProneBarangayDocumentId(value) {
-  return normalizeBarangay(value).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+function floodProneBarangayId(barangay) {
+  return normalizeBarangay(barangay).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+}
+
+export function subscribeToFloodProneBarangays(callback, onError) {
+  return onSnapshot(collection(db, "floodProneBarangays"), (snapshot) => {
+    callback(snapshot.docs.map((barangayDoc) => ({ id: barangayDoc.id, ...barangayDoc.data() })))
+  }, onError)
+}
+
+export function subscribeToFloodProneStatus(barangay, callback) {
+  const normalizedBarangay = (barangay || "").trim()
+  if (!normalizedBarangay) {
+    callback(false)
+    return () => {}
+  }
+
+  const barangayQuery = query(
+    collection(db, "floodProneBarangays"),
+    where("barangay", "==", normalizedBarangay),
+  )
+  return onSnapshot(barangayQuery, (snapshot) => callback(!snapshot.empty), (error) => {
+    console.error("Error subscribing to flood-prone status:", error)
+    callback(false)
+  })
+}
+
+export async function setFloodProneBarangay(barangay, isFloodProne) {
+  const user = auth.currentUser
+  if (!user) throw new Error("You must be signed in to manage flood-prone barangays.")
+
+  const profile = await getUserProfile(user.uid)
+  if (profile?.role !== "admin") throw new Error("Only administrators can manage flood-prone barangays.")
+
+  const trimmedBarangay = (barangay || "").trim()
+  if (!trimmedBarangay || trimmedBarangay.length > 80) {
+    throw new Error("Barangay must be between 1 and 80 characters.")
+  }
+
+  const barangayRef = doc(db, "floodProneBarangays", floodProneBarangayId(trimmedBarangay))
+  if (!isFloodProne) return deleteDoc(barangayRef)
+
+  return setDoc(barangayRef, {
+    barangay: trimmedBarangay,
+    updatedBy: user.uid,
+    updatedAt: serverTimestamp(),
+  })
 }
 
 // Live-subscribes to the "users" collection, optionally filtered by role and/or barangay.
@@ -456,43 +501,6 @@ export function subscribeToUsers({ role, barangay } = {}, callback) {
     console.error("Error subscribing to users:", error)
     callback([])
   })
-}
-
-export function subscribeToFloodProneBarangays(callback, onError = () => {}) {
-  return onSnapshot(collection(db, "floodProneBarangays"), (snapshot) => {
-    const barangays = snapshot.docs.map((barangayDoc) => ({ id: barangayDoc.id, ...barangayDoc.data() }))
-    barangays.sort((first, second) => first.barangay.localeCompare(second.barangay))
-    callback(barangays)
-  }, onError)
-}
-
-export function subscribeToFloodProneStatus(barangay, callback) {
-  const barangayRef = doc(db, "floodProneBarangays", floodProneBarangayDocumentId(barangay))
-  return onSnapshot(barangayRef, (snapshot) => {
-    callback(snapshot.exists() && normalizeBarangay(snapshot.data().barangay) === normalizeBarangay(barangay))
-  }, (error) => {
-    console.error("Error subscribing to flood-prone status:", error)
-    callback(false)
-  })
-}
-
-export async function setFloodProneBarangay(barangay, isFloodProne) {
-  const user = auth.currentUser
-  if (!user) throw new Error("You must be signed in to manage flood-prone barangays.")
-
-  const profile = await getUserProfile(user.uid)
-  if (profile?.role !== "admin") throw new Error("Only administrators can manage flood-prone barangays.")
-
-  const barangayRef = doc(db, "floodProneBarangays", floodProneBarangayDocumentId(barangay))
-  if (isFloodProne) {
-    await setDoc(barangayRef, {
-      barangay: barangay.trim(),
-      updatedBy: user.uid,
-      updatedAt: serverTimestamp(),
-    })
-  } else {
-    await deleteDoc(barangayRef)
-  }
 }
 
 export async function updateUserProfileFields(uid, updates) {
@@ -547,6 +555,11 @@ export async function createAnnouncement({ channel = "web", type, audience, prio
     throw new Error("This account is not configured as a staff or admin account in Firestore. Ask an administrator to create the staff account from User Management, then sign in with that account.")
   }
 
+  if (senderProfile.role === "staff" &&
+    (audience !== "barangay" || normalizeBarangay(barangay) !== normalizeBarangay(senderProfile.barangay))) {
+    throw new Error("Staff can only send alerts to their assigned barangay.")
+  }
+
   const announcement = {
     channel,
     type,
@@ -564,14 +577,6 @@ export async function createAnnouncement({ channel = "web", type, audience, prio
   }
 
   return addDoc(collection(db, "announcements"), announcement)
-}
-
-export function subscribeToAnnouncementSmsDelivery(announcementId, callback) {
-  return onSnapshot(doc(db, "announcements", announcementId), (snapshot) => {
-    callback(snapshot.exists() ? snapshot.data().smsDelivery || null : null)
-  }, (error) => {
-    callback({ status: "error", error: error.message })
-  })
 }
 
 export function subscribeToTeamChat(callback, onError) {
@@ -601,6 +606,18 @@ export async function sendTeamChatMessage(text) {
     text: trimmedText,
     createdAt: serverTimestamp(),
   })
+}
+
+export async function deleteTeamChatMessage(messageId) {
+  const user = auth.currentUser
+  if (!user) throw new Error("You must be signed in to use team chat.")
+
+  const profile = await getUserProfile(user.uid)
+  if (!profile || !["admin", "staff"].includes(profile.role)) {
+    throw new Error("Only administrators and staff can use team chat.")
+  }
+
+  return deleteDoc(doc(db, "teamChatMessages", messageId))
 }
 
 // Merges the general audience query with a barangay-scoped query so residents/staff
